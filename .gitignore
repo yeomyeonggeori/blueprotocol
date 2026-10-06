@@ -1,0 +1,11 @@
+/bin/
+*.test
+*.out
+.DS_Store
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+__pycache__/
+*.pyc
