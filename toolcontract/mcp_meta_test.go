@@ -105,3 +105,25 @@ func TestADescriptorPublishedWholeReadsBackWhole(t *testing.T) {
 		t.Fatalf("read back %+v, published %+v", read, published)
 	}
 }
+
+func TestAToolOfferedOnRequestStaysOfferedOnRequestAcrossTheWire(t *testing.T) {
+	published := ToolDescriptor{Name: "message_send", IsOfferedOnRequest: true}
+	encoded, errorValue := json.Marshal(DescriptorMeta(published))
+	if errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	var received map[string]any
+	if errorValue := json.Unmarshal(encoded, &received); errorValue != nil {
+		t.Fatal(errorValue)
+	}
+
+	var read ToolDescriptor
+	ApplyDescriptorMeta(&read, received)
+
+	if !read.IsOfferedOnRequest {
+		t.Fatalf("the fact that the host does not preload this tool was lost: %+v", read)
+	}
+	if received[MetaKeyOfferedOnRequest] != true {
+		t.Fatalf("the fact is not carried as its own key, so a reader of the bare meta cannot see it: %v", received)
+	}
+}

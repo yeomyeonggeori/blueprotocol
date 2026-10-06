@@ -150,6 +150,9 @@
     "isHostGated": {
       "type": "boolean"
     },
+    "isOfferedOnRequest": {
+      "type": "boolean"
+    },
     "approvalScope": {
       "type": "string"
     },
