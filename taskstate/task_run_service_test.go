@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yeomyeonggeori/bluecollar/agentcontract"
+	"github.com/yeomyeonggeori/blueprotocol/agentcontract"
 )
 
 func TestTaskRunCancelCallsRegisteredCancelFunction(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yeomyeonggeori/bluecollar/model"
+	"github.com/yeomyeonggeori/blueprotocol/model"
 )
 
 func TestObserveLanguageModelRecordsStructuredCalls(t *testing.T) {

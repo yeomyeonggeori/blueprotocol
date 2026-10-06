@@ -10,8 +10,8 @@ import (
 	"image/png"
 	"testing"
 
-	"github.com/yeomyeonggeori/bluecollar/evaltest"
-	"github.com/yeomyeonggeori/bluecollar/model"
+	"github.com/yeomyeonggeori/blueprotocol/evaltest"
+	"github.com/yeomyeonggeori/blueprotocol/model"
 )
 
 func solidColorPNG(t *testing.T, fill color.Color) []byte {

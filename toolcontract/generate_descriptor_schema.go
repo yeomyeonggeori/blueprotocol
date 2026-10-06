@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/yeomyeonggeori/bluecollar/toolcontract"
+	"github.com/yeomyeonggeori/blueprotocol/toolcontract"
 )
 
 func main() {

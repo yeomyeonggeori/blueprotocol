@@ -1,6 +1,6 @@
 package agentcontract
 
-import "github.com/yeomyeonggeori/bluecollar/model"
+import "github.com/yeomyeonggeori/blueprotocol/model"
 
 type RecoveryBudget struct {
 	CorrectedRetry int

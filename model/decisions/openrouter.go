@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yeomyeonggeori/bluecollar/model"
+	"github.com/yeomyeonggeori/blueprotocol/model"
 )
 
 const DefaultEndpointURL = "https://openrouter.ai/api/alpha/decisions"

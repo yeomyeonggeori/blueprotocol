@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yeomyeonggeori/bluecollar/agentcontract"
+	"github.com/yeomyeonggeori/blueprotocol/agentcontract"
 )
 
 type TaskEventRepository interface {

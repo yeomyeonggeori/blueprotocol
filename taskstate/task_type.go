@@ -3,7 +3,7 @@ package taskstate
 import (
 	"time"
 
-	"github.com/yeomyeonggeori/bluecollar/agentcontract"
+	"github.com/yeomyeonggeori/blueprotocol/agentcontract"
 )
 
 type TaskStep struct {
