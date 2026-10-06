@@ -1,6 +1,8 @@
 package agentcontract
 
-import "time"
+import (
+	"time"
+)
 
 type VisibleContext struct {
 	Messages                   []VisibleContextMessage

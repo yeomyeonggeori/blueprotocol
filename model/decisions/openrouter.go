@@ -23,12 +23,6 @@ type EnvironmentNames struct {
 	Model    string
 }
 
-var DecisionEnvironmentNames = EnvironmentNames{
-	Endpoint: "BLUECOLLAR_DECISION_ENDPOINT",
-	APIKey:   "BLUECOLLAR_DECISION_API_KEY",
-	Model:    "BLUECOLLAR_DECISION_MODEL",
-}
-
 type Endpoint struct {
 	URL        string
 	ModelName  string
@@ -56,15 +50,6 @@ func EndpointFromEnvironment(names EnvironmentNames) (Endpoint, error) {
 
 func (endpoint Endpoint) DecisionModel() model.DecisionModel {
 	return decisionModel{endpoint: endpoint}
-}
-
-func ConfiguredDecisionModel(warnings io.Writer) model.DecisionModel {
-	endpoint, errorValue := EndpointFromEnvironment(DecisionEnvironmentNames)
-	if errorValue != nil {
-		fmt.Fprintln(warnings, "no decision model:", errorValue)
-		return nil
-	}
-	return endpoint.DecisionModel()
 }
 
 type decisionModel struct {

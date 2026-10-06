@@ -1,6 +1,8 @@
 package agentcontract
 
-import "strings"
+import (
+	"strings"
+)
 
 const unnamedAgentName = "the assistant"
 

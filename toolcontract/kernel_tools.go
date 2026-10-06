@@ -1,6 +1,8 @@
 package toolcontract
 
-import "strings"
+import (
+	"strings"
+)
 
 const (
 	BashToolName                = "bash"
@@ -21,16 +23,6 @@ const (
 	EquipToolName               = "equip"
 )
 
-const MaxExtensionCallableToolCount = 15
-
-const ToolExposureGroupsRankedBelowTheLikelyTools = 3
-
-const MaxLikelyToolCount = MaxExtensionCallableToolCount - ToolExposureGroupsRankedBelowTheLikelyTools
-
-const ToolNamesOnePlanStepIsExpectedToNeed = 5
-
-const MaxLikelyToolCountForOnePlanStep = min(ToolNamesOnePlanStepIsExpectedToNeed, MaxLikelyToolCount)
-
 var currentNameByFormerKernelToolName = map[string]string{
 	"shell":      BashToolName,
 	"file_write": WriteToolName,
@@ -44,12 +36,4 @@ func CanonicalToolName(recordedToolName string) string {
 		return currentToolName
 	}
 	return trimmedToolName
-}
-
-func ToolNamesMatch(leftToolName string, rightToolName string) bool {
-	return strings.TrimSpace(leftToolName) == strings.TrimSpace(rightToolName)
-}
-
-func IsArtifactDeliveryTool(toolName string) bool {
-	return strings.TrimSpace(toolName) == FileDeliverToolName
 }

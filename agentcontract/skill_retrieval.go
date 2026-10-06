@@ -1,6 +1,8 @@
 package agentcontract
 
-import "context"
+import (
+	"context"
+)
 
 type SkillRetriever interface {
 	Available(AgentRequest, []SkillInstruction) []SkillInstruction

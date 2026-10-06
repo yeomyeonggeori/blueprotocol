@@ -1,6 +1,8 @@
 package openaicompatible
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestEndpointRefusesToBuildAProviderWithoutAURL(t *testing.T) {
 	_, errorValue := Endpoint{ModelName: "example/model"}.Provider()

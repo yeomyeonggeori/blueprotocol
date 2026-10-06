@@ -1,6 +1,8 @@
 package agentcontract
 
-import "time"
+import (
+	"time"
+)
 
 type MemoryFact struct {
 	FactID          string    `json:"factID"`
@@ -14,7 +16,5 @@ type MemoryFact struct {
 }
 
 const (
-	MemoryScopePerson    = "person"
 	MemoryScopeWorkspace = "workspace"
-	MemoryScopeCircle    = "circle"
 )

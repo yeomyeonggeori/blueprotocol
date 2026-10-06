@@ -1,6 +1,8 @@
 package agentcontract
 
-import "errors"
+import (
+	"errors"
+)
 
 type IntakeClassification string
 type TaskShape string
@@ -82,106 +84,11 @@ func (intakeDecision IntakeDecision) Validate() error {
 	return nil
 }
 
-type TurnDecision struct {
-	Route                   TurnRoute             `json:"route"`
-	Classification          IntakeClassification  `json:"classification"`
-	TaskShape               TaskShape             `json:"taskShape"`
-	TaskLevel               TaskLevel             `json:"level"`
-	RequestedOutputFormats  []string              `json:"requestedOutputFormats"`
-	DeliverableKind         DeliverableKind       `json:"deliverableKind,omitempty"`
-	ExpectedResults         []ExpectedResult      `json:"expectedResults,omitempty"`
-	ResponseLanguage        string                `json:"responseLanguage"`
-	Reason                  string                `json:"reason"`
-	UserFacingReply         string                `json:"userFacingReply"`
-	IsExternalSendRequested bool                  `json:"isExternalSendRequested"`
-	InitialToolNames        []string              `json:"initialToolNames,omitempty"`
-	PriorTaskReference      PriorTaskReference    `json:"priorTaskReference,omitempty"`
-	Approval                *ApprovalSignal       `json:"approval,omitempty"`
-	Choices                 []string              `json:"choices,omitempty"`
-	ClarificationQuestion   string                `json:"clarificationQuestion,omitempty"`
-	ClarificationOptions    []ClarificationOption `json:"clarificationOptions,omitempty"`
-	HasIndependentWork      bool                  `json:"hasIndependentWork"`
-	ExpectedToolCount       ExpectedToolCount     `json:"expectedToolCount,omitempty"`
-	RawDecisionRoute        TurnRoute             `json:"rawDecisionRoute,omitempty"`
-	RoutingFallbackReason   string                `json:"routingFallbackReason,omitempty"`
-}
-
-type ClarificationDisposition string
-
-const (
-	ClarificationDispositionAsk       ClarificationDisposition = "ask"
-	ClarificationDispositionStartWork ClarificationDisposition = "start_work"
-)
-
-type TurnWords struct {
-	Reason                   string                   `json:"reason"`
-	UserFacingReply          string                   `json:"userFacingReply"`
-	ClarificationDisposition ClarificationDisposition `json:"clarificationDisposition,omitempty"`
-	ClarificationQuestion    string                   `json:"clarificationQuestion"`
-	ClarificationOptions     []ClarificationOption    `json:"clarificationOptions"`
-	ExpectedResults          []ExpectedResult         `json:"expectedResults"`
-}
-
-func (turnDecision TurnDecision) WithTurnWords(turnWords TurnWords) TurnDecision {
-	turnDecision.Reason = turnWords.Reason
-	turnDecision.UserFacingReply = turnWords.UserFacingReply
-	turnDecision.ClarificationQuestion = turnWords.ClarificationQuestion
-	turnDecision.ClarificationOptions = turnWords.ClarificationOptions
-	turnDecision.ExpectedResults = turnWords.ExpectedResults
-	return turnDecision
-}
-
-func (turnDecision TurnDecision) IntakeDecision() IntakeDecision {
-	return IntakeDecision{
-		Classification:          turnDecision.Classification,
-		TaskShape:               turnDecision.TaskShape,
-		TaskLevel:               NormalizeTaskLevel(string(turnDecision.TaskLevel)),
-		RequestedOutputFormats:  append([]string{}, turnDecision.RequestedOutputFormats...),
-		DeliverableKind:         turnDecision.DeliverableKind,
-		ExpectedResults:         NormalizeExpectedResults(turnDecision.ExpectedResults),
-		ResponseLanguage:        turnDecision.ResponseLanguage,
-		Reason:                  turnDecision.Reason,
-		UserFacingReply:         turnDecision.UserFacingReply,
-		IsExternalSendRequested: turnDecision.IsExternalSendRequested,
-		HasIndependentWork:      turnDecision.HasIndependentWork,
-		ExpectedToolCount:       turnDecision.ExpectedToolCount,
-		RawDecisionRoute:        turnDecision.RawDecisionRoute,
-		InitialToolNames:        append([]string{}, turnDecision.InitialToolNames...),
-		PriorTaskReference:      NormalizePriorTaskReference(turnDecision.PriorTaskReference),
-		ClarificationQuestion:   turnDecision.ClarificationQuestion,
-		ClarificationOptions:    append([]ClarificationOption{}, turnDecision.ClarificationOptions...),
-	}
-}
-
-func (turnDecision TurnDecision) WithRestoredIntakeState(intakeDecision IntakeDecision) TurnDecision {
-	if NormalizeTaskLevel(string(intakeDecision.TaskLevel)) == "" {
-		return turnDecision
-	}
-	turnDecision.Classification = intakeDecision.Classification
-	turnDecision.TaskShape = intakeDecision.TaskShape
-	turnDecision.TaskLevel = intakeDecision.TaskLevel
-	turnDecision.RequestedOutputFormats = append([]string{}, intakeDecision.RequestedOutputFormats...)
-	turnDecision.ExpectedResults = NormalizeExpectedResults(intakeDecision.ExpectedResults)
-	turnDecision.IsExternalSendRequested = intakeDecision.IsExternalSendRequested
-	turnDecision.HasIndependentWork = intakeDecision.HasIndependentWork
-	turnDecision.ExpectedToolCount = intakeDecision.ExpectedToolCount
-	turnDecision.RawDecisionRoute = intakeDecision.RawDecisionRoute
-	turnDecision.InitialToolNames = append([]string{}, intakeDecision.InitialToolNames...)
-	return turnDecision
-}
-
 func NormalizeIntakeClassification(classification IntakeClassification) IntakeClassification {
 	if IsIntakeClassificationName(string(classification)) {
 		return classification
 	}
 	return ""
-}
-
-func NormalizePriorTaskReference(reference PriorTaskReference) PriorTaskReference {
-	if IsPriorTaskReferenceName(string(reference)) {
-		return reference
-	}
-	return PriorTaskReferenceNone
 }
 
 var TurnRouteNames = []string{

@@ -1,6 +1,8 @@
 package toolcontract
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestCanonicalToolName(t *testing.T) {
 	testCases := []struct {

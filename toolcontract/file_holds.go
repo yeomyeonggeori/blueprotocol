@@ -1,6 +1,8 @@
 package toolcontract
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 const FileHoldsMaximumBytes = 16000
 

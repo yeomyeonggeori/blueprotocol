@@ -126,31 +126,6 @@ func TestToolSetDescriptionsUseDescriptorDescription(t *testing.T) {
 	}
 }
 
-func TestToolSideEffectClassUsesOnlyDescriptorMetadata(t *testing.T) {
-	tests := []struct {
-		toolName           string
-		sideEffectClass    string
-		expectedSideEffect string
-		requiresCompletion bool
-	}{
-		{toolName: "task_add", sideEffectClass: ToolSideEffectStateChange, expectedSideEffect: ToolSideEffectStateChange, requiresCompletion: true},
-		{toolName: "task_list", sideEffectClass: ToolSideEffectRead, expectedSideEffect: ToolSideEffectRead, requiresCompletion: false},
-		{toolName: "message_send", sideEffectClass: ToolSideEffectExternalWrite, expectedSideEffect: ToolSideEffectExternalWrite, requiresCompletion: true},
-		{toolName: "llm_structured", sideEffectClass: ToolSideEffectComputation, expectedSideEffect: ToolSideEffectComputation, requiresCompletion: false},
-		{toolName: "looks_like_write", expectedSideEffect: "", requiresCompletion: false},
-	}
-
-	for _, test := range tests {
-		toolDefinition := ToolDefinition{Name: test.toolName, SideEffectClass: test.sideEffectClass}
-		if actualSideEffect := ToolDefinitionSideEffectClass(toolDefinition); actualSideEffect != test.expectedSideEffect {
-			t.Fatalf("expected %s side effect for %s, got %s", test.expectedSideEffect, test.toolName, actualSideEffect)
-		}
-		if actualRequirement := ToolDefinitionRequiresSideEffectEvidence(toolDefinition); actualRequirement != test.requiresCompletion {
-			t.Fatalf("expected requiresCompletion=%v for %s, got %v", test.requiresCompletion, test.toolName, actualRequirement)
-		}
-	}
-}
-
 func TestToolSetKeepsDeclaredRecoverySideEffectBeforeDefault(t *testing.T) {
 	toolSet := NewToolSet([]string{"data_write"})
 	registerTestTool(toolSet, ToolDefinition{

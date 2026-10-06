@@ -1,6 +1,8 @@
 package agentcontract
 
-import "strings"
+import (
+	"strings"
+)
 
 type ApprovalTarget struct {
 	InputField string   `json:"inputField,omitempty"`

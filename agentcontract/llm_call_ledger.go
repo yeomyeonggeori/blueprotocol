@@ -3,7 +3,6 @@ package agentcontract
 import (
 	"context"
 	"encoding/json"
-	"slices"
 	"strings"
 	"time"
 
@@ -11,12 +10,8 @@ import (
 )
 
 const llmCallErrorMaximumCharacters = 300
-const TurnRouterSchemaName = "bluecollar_turn_router"
-const AttachmentDescriptionSchemaName = "bluecollar_attachment_description"
-const LLMCallKindDecision = "decision"
-const AgentActionSchemaName = "bluecollar_agent_turn_action"
 
-var IntakeSchemaNames = []string{TurnRouterSchemaName, AttachmentDescriptionSchemaName}
+const LLMCallKindDecision = "decision"
 
 type LLMCallRecord struct {
 	Kind                   string                                   `json:"kind"`
@@ -74,26 +69,6 @@ type ToolSelectionRecord struct {
 }
 
 type LLMCallObserver func(record LLMCallRecord)
-
-type IntakeCallLedger struct {
-	Records     []LLMCallRecord
-	SchemaNames []string
-}
-
-func (ledger *IntakeCallLedger) Observe(record LLMCallRecord) {
-	if !ledger.includes(record) {
-		return
-	}
-	ledger.Records = append(ledger.Records, record)
-}
-
-func (ledger *IntakeCallLedger) includes(record LLMCallRecord) bool {
-	return record.Kind == LLMCallKindDecision || slices.Contains(ledger.SchemaNames, record.SchemaName)
-}
-
-func (ledger *IntakeCallLedger) LanguageModel(provider model.LanguageModelProvider) model.LanguageModelProvider {
-	return ObserveLanguageModel(provider, ledger.Observe)
-}
 
 type observedLanguageModel struct {
 	provider model.LanguageModelProvider

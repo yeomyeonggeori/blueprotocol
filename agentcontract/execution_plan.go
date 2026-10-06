@@ -20,14 +20,3 @@ type ExecutionPlan struct {
 	MissingInformation      []string `json:"missingInformation"`
 	ContinuationInstruction string   `json:"continuationInstruction"`
 }
-
-const (
-	RequesterAuthorizationExplicit = "explicit"
-	RequesterAuthorizationImplied  = "implied"
-	RequesterAuthorizationAbsent   = "absent"
-)
-
-type ConfirmationReplyDecision struct {
-	Decision string `json:"decision"`
-	Reason   string `json:"reason"`
-}

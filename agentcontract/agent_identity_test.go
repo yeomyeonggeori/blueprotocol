@@ -1,6 +1,8 @@
 package agentcontract
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestAnAgentWithNoGivenNameIsNotNamedAfterItsHarness(t *testing.T) {
 	identity := AgentIdentity{}

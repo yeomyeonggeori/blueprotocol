@@ -1,6 +1,8 @@
 package taskstate
 
-import "sync"
+import (
+	"sync"
+)
 
 type TaskStepRepository interface {
 	InsertTaskStep(TaskStep) error

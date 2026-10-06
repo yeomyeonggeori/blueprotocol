@@ -1,6 +1,8 @@
 package model
 
-import "context"
+import (
+	"context"
+)
 
 type Message struct {
 	Role    string        `json:"role"`

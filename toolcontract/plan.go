@@ -1,6 +1,8 @@
 package toolcontract
 
-import "strings"
+import (
+	"strings"
+)
 
 const maximumPlanStepCount = 12
 

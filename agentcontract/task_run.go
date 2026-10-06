@@ -1,6 +1,8 @@
 package agentcontract
 
-import "time"
+import (
+	"time"
+)
 
 type TaskStatus string
 

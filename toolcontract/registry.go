@@ -553,15 +553,6 @@ func ToolDefinitionSideEffectClass(toolDefinition ToolDefinition) string {
 	return normalizeToolSideEffectClass(firstNonEmptyString(toolDefinition.SideEffectClass, toolDefinition.RecoveryCard.SideEffect))
 }
 
-func ToolDefinitionRequiresSideEffectEvidence(toolDefinition ToolDefinition) bool {
-	switch ToolDefinitionSideEffectClass(toolDefinition) {
-	case "", ToolSideEffectNone, ToolSideEffectRead, ToolSideEffectComputation:
-		return false
-	default:
-		return true
-	}
-}
-
 func normalizeToolSideEffectClass(sideEffectClass string) string {
 	normalizedSideEffectClass := strings.ToLower(strings.TrimSpace(sideEffectClass))
 	switch normalizedSideEffectClass {

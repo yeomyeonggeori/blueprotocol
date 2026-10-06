@@ -314,12 +314,6 @@ func TestFailureNoticePromptIncludesTypedIntakeFactsWithoutClaimingProgress(t *t
 	}
 }
 
-func TestElapsedLimitRawErrorSummaryDoesNotClaimSavedProgress(t *testing.T) {
-	if strings.Contains(ElapsedLimitRawErrorSummary, "saved") || strings.Contains(ElapsedLimitRawErrorSummary, "continuation") {
-		t.Fatalf("expected neutral elapsed limit summary, got %q", ElapsedLimitRawErrorSummary)
-	}
-}
-
 func TestFailureNoticeGeneratorFallsBackToRedactedRawError(t *testing.T) {
 	notice, status := (FailureNoticeGenerator{LanguageModel: failingLanguageModel{}}).Generate(context.Background(), FailureReport{
 		Phase:             "launch",
@@ -340,14 +334,6 @@ func TestFailureNoticeGeneratorFallsBackToRedactedRawError(t *testing.T) {
 	}
 	if notice.SendableMessage() == "" {
 		t.Fatalf("expected raw error notice to be sendable")
-	}
-}
-
-func TestFinishMessageCompressionPromptUsesMattermostBudget(t *testing.T) {
-	prompt := BuildFinishMessageCompressionPrompt("긴 결과입니다.", toolcontract.ResponseLanguageKorean, FinishMessageMaximumCharacters)
-
-	if !strings.Contains(prompt, "Maximum characters: 1200") {
-		t.Fatalf("expected Mattermost finish budget, got %q", prompt)
 	}
 }
 

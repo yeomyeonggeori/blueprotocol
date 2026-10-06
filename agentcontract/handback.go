@@ -1,6 +1,8 @@
 package agentcontract
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 const (
 	LedgerMetaKey         = "blueprotocol/ledger"

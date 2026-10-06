@@ -1,6 +1,8 @@
 package toolcontract
 
-import "strings"
+import (
+	"strings"
+)
 
 const (
 	ResponseLanguageKorean  = "ko"

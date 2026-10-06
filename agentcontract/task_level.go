@@ -1,6 +1,8 @@
 package agentcontract
 
-import "strings"
+import (
+	"strings"
+)
 
 type TaskLevel string
 
@@ -12,25 +14,6 @@ const (
 	TaskLevelXHigh  TaskLevel = "xhigh"
 	TaskLevelMax    TaskLevel = "max"
 )
-
-var orderedTaskLevels = []TaskLevel{TaskLevelXLow, TaskLevelLow, TaskLevelMedium, TaskLevelHigh, TaskLevelXHigh, TaskLevelMax}
-
-func TaskLevelRank(taskLevel TaskLevel) int {
-	normalizedTaskLevel := NormalizeTaskLevel(string(taskLevel))
-	for index, orderedTaskLevel := range orderedTaskLevels {
-		if orderedTaskLevel == normalizedTaskLevel {
-			return index
-		}
-	}
-	return -1
-}
-
-func LargerTaskLevel(first TaskLevel, second TaskLevel) TaskLevel {
-	if TaskLevelRank(second) > TaskLevelRank(first) {
-		return second
-	}
-	return first
-}
 
 func NormalizeTaskLevel(value string) TaskLevel {
 	trimmedValue := strings.TrimSpace(value)

@@ -1,6 +1,8 @@
 package agentcontract
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestATargetIsResolvedByOneIdentityOrByAListOfThem(t *testing.T) {
 	for name, testCase := range map[string]struct {

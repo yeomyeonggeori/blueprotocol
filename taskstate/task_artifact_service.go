@@ -1,6 +1,8 @@
 package taskstate
 
-import "sync"
+import (
+	"sync"
+)
 
 type TaskArtifactRepository interface {
 	InsertTaskArtifact(TaskArtifact) error

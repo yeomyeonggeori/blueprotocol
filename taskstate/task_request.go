@@ -1,6 +1,8 @@
 package taskstate
 
-import "time"
+import (
+	"time"
+)
 
 type TaskRunOrigin struct {
 	ConversationID string

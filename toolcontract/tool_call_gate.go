@@ -1,6 +1,8 @@
 package toolcontract
 
-import "context"
+import (
+	"context"
+)
 
 type ToolCallReview struct {
 	MayProceed bool

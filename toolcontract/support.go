@@ -1,6 +1,8 @@
 package toolcontract
 
-import "strings"
+import (
+	"strings"
+)
 
 func firstNonEmptyString(values ...string) string {
 	for _, value := range values {
