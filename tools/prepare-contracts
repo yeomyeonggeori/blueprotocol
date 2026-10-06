@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+[ "$#" -eq 1 ] || { echo "usage: tools/prepare-contracts <bluecollar-tree>" >&2; exit 2; }
+cd "$1"
+
+require_match() {
+  local pattern="$1" path="$2"
+  grep -q "$pattern" "$path" || { echo "prepare-contracts: $path no longer holds $pattern" >&2; exit 1; }
+}
+
+neutral_failure_notice_names() {
+  require_match 'bluecollar_failure_notice' agentcontract/failure_notice.go
+  git ls-files -z 'agentcontract/*.go' | xargs -0 perl -pi -e 's/"bluecollar_((?:failure|intake)_notice[a-z_]*)"/"$1"/g'
+}
+
+neutral_wire_keys() {
+  require_match 'bluecollar.dev/ledger' agentcontract/handback.go
+  perl -pi -e 's#"bluecollar\.dev/#"blueprotocol/#g' agentcontract/handback.go
+}
+
+ledger_names_its_own_schemas() {
+  require_match 'case TurnRouterSchemaName, AttachmentDescriptionSchemaName' agentcontract/llm_call_ledger.go
+  perl -0pi -e '
+    s/type IntakeCallLedger struct \{\n\tRecords \[\]LLMCallRecord\n\}/type IntakeCallLedger struct {\n\tRecords     []LLMCallRecord\n\tSchemaNames []string\n}/;
+    s/func \(ledger \*IntakeCallLedger\) Observe\(record LLMCallRecord\) \{\n\tif !isIntakeCallRecord\(record\) \{/func (ledger *IntakeCallLedger) Observe(record LLMCallRecord) {\n\tif !ledger.includes(record) {/;
+    s/func isIntakeCallRecord\(record LLMCallRecord\) bool \{\n\tif record\.Kind == LLMCallKindDecision \{\n\t\treturn true\n\t\}\n\tswitch record\.SchemaName \{\n\tcase TurnRouterSchemaName, AttachmentDescriptionSchemaName:\n\t\treturn true\n\tdefault:\n\t\treturn false\n\t\}\n\}/func (ledger *IntakeCallLedger) includes(record LLMCallRecord) bool {\n\treturn record.Kind == LLMCallKindDecision || slices.Contains(ledger.SchemaNames, record.SchemaName)\n}/;
+    s/import \(\n/import (\n\t"slices"\n/ unless /"slices"/;
+    s/(const AgentActionSchemaName = [^\n]*\n)/$1\nvar IntakeSchemaNames = []string{TurnRouterSchemaName, AttachmentDescriptionSchemaName}\n/;
+  ' agentcontract/llm_call_ledger.go
+  grep -q 'ledger.includes' agentcontract/llm_call_ledger.go || { echo "prepare-contracts: ledger edit did not apply" >&2; exit 1; }
+  git ls-files -z '*.go' | xargs -0 perl -pi -e 's/\bagentcontract\.IntakeCallLedger\{\}/agentcontract.IntakeCallLedger{SchemaNames: agentcontract.IntakeSchemaNames}/g'
+  perl -pi -e 's/(?<![.\w])IntakeCallLedger\{\}/IntakeCallLedger{SchemaNames: IntakeSchemaNames}/g' agentcontract/*_test.go
+  gofmt -w agentcontract/llm_call_ledger.go
+}
+
+neutral_test_labels() {
+  git ls-files -z 'agentcontract/*_test.go' | xargs -0 perl -pi -e 's/"bluecollar_agent_turn_action"/"agent_turn_action"/g; s/\bAgentActionSchemaName\b/"agent_turn_action"/g'
+}
+
+decision_endpoint_names_come_from_the_caller() {
+  require_match 'BLUECOLLAR_DECISION_ENDPOINT' model/decisions/openrouter.go
+  perl -0pi -e '
+    s/const \(\n\tendpointEnvironmentName = [^\n]*\n\tapiKeyEnvironmentName   = [^\n]*\n\tmodelEnvironmentName    = [^\n]*\n\)\n/type EnvironmentNames struct {\n\tEndpoint string\n\tAPIKey   string\n\tModel    string\n}\n\nvar DecisionEnvironmentNames = EnvironmentNames{\n\tEndpoint: "BLUECOLLAR_DECISION_ENDPOINT",\n\tAPIKey:   "BLUECOLLAR_DECISION_API_KEY",\n\tModel:    "BLUECOLLAR_DECISION_MODEL",\n}\n/;
+    s/errors\.New\(apiKeyEnvironmentName \+ " is not set"\)/errors.New("the decision API key is not set")/;
+    s/func EndpointFromEnvironment\(\)/func EndpointFromEnvironment(names EnvironmentNames)/;
+    s/os\.Getenv\(apiKeyEnvironmentName\)/os.Getenv(names.APIKey)/;
+    s/os\.Getenv\(modelEnvironmentName\)/os.Getenv(names.Model)/;
+    s/os\.Getenv\(endpointEnvironmentName\)/os.Getenv(names.Endpoint)/;
+    s/return Endpoint\{\}, ErrDecisionAPIKeyMissing/return Endpoint{}, fmt.Errorf("%w: set %s", ErrDecisionAPIKeyMissing, names.APIKey)/;
+    s/errors\.New\(modelEnvironmentName \+ " is not set and there is no default decision model"\)/fmt.Errorf("%s is not set and there is no default decision model", names.Model)/;
+    s/EndpointFromEnvironment\(\)\n\tif errorValue != nil \{\n\t\tfmt\.Fprintln\(warnings/EndpointFromEnvironment(DecisionEnvironmentNames)\n\tif errorValue != nil {\n\t\tfmt.Fprintln(warnings/;
+  ' model/decisions/openrouter.go
+  grep -q 'names EnvironmentNames' model/decisions/openrouter.go || { echo "prepare-contracts: decision endpoint edit did not apply" >&2; exit 1; }
+  perl -pi -e 's/\bapiKeyEnvironmentName\b/"DECISION_API_KEY"/; s/\bmodelEnvironmentName\b/"DECISION_MODEL"/' model/decisions/images_live_test.go
+  git ls-files -z '*.go' | xargs -0 perl -pi -e 's/decisions\.EndpointFromEnvironment\(\)/decisions.EndpointFromEnvironment(decisions.DecisionEnvironmentNames)/g'
+  gofmt -w model/decisions/openrouter.go
+}
+
+neutral_failure_notice_names
+neutral_test_labels
+decision_endpoint_names_come_from_the_caller
+neutral_wire_keys
+ledger_names_its_own_schemas

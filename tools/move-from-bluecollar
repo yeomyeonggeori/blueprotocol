@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "usage: tools/move-from-bluecollar <bluecollar-checkout> <bluecollar-ref> <blueclaw-checkout>" >&2
+  echo "  rebuilds branch \${BRANCH:-feat/move-contracts} from the commit that last changed tools/ (override with BASE_REF)" >&2
+  exit 2
+}
+
+[ "$#" -eq 3 ] || usage
+
+repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+bluecollar_checkout="$(cd "$1" && pwd)"
+source_ref="$2"
+blueclaw_checkout="$(cd "$3" && pwd)"
+branch="${BRANCH:-feat/move-contracts}"
+base_ref="${BASE_REF:-$(git -C "$repository_root" log -1 --format=%H -- tools)}"
+co_author="Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+contract_roots=(agentcontract toolcontract model taskstate holdrecord acpupdate evaltest)
+source_module="github.com/yeomyeonggeori/bluecollar"
+target_module="github.com/yeomyeonggeori/blueprotocol"
+contractsplit_directory="$(mktemp -d)"
+trap 'rm -rf "$contractsplit_directory"' EXIT
+(cd "$repository_root" && go build -o "$contractsplit_directory/contractsplit" ./tools/contractsplit)
+contractsplit=("$contractsplit_directory/contractsplit")
+
+cd "$repository_root"
+
+commit_all() {
+  local subject="$1" body="$2"
+  git add -A
+  git commit -q -m "$subject" -m "$body" -m "$co_author"
+}
+
+commit_in_clone() {
+  local clone="$1" subject="$2" body="$3"
+  git -C "$clone" add -A
+  git -C "$clone" -c user.name="$(git config user.name)" -c user.email="$(git config user.email)" commit -q -m "$subject" -m "$body" -m "$co_author"
+}
+
+prepare_clone() {
+  local clone="$1"
+  git clone -q --no-local "$bluecollar_checkout" "$clone"
+  git -C "$clone" checkout -q --detach "origin/$source_ref" 2>/dev/null ||
+    git -C "$clone" checkout -q --detach "$source_ref"
+  "$repository_root/tools/prepare-contracts" "$clone"
+  commit_in_clone "$clone" "refactor: give the contracts names that belong to no harness" \
+    "The failure notice schema names and the ACP metadata keys carried bluecollar's name although a host reads them, and IntakeCallLedger filtered on schema names only bluecollar's router uses. The ledger now takes the schema names to include, and the names that stay bluecollar's are no longer referenced by shared code."
+}
+
+plan_split() {
+  local clone="$1" decisions="$2"
+  "${contractsplit[@]}" plan -contracts "$clone" -host "$blueclaw_checkout" -users "$clone" \
+    -layout "$repository_root/tools/contract-layout.json" -decisions "$decisions"
+}
+
+split_history() {
+  local clone="$1" path_arguments=() path
+  for path in "${contract_roots[@]}"; do path_arguments+=(--path "$path"); done
+  git -C "$clone" filter-repo --force "${path_arguments[@]}" >/dev/null 2>&1
+}
+
+merge_history() {
+  local clone="$1" source_commit
+  source_commit="$(git -C "$clone" rev-parse HEAD)"
+  git fetch -q --no-tags "$clone" HEAD
+  git merge -q --allow-unrelated-histories --no-edit \
+    -m "chore: bring the contract packages over with their history" \
+    -m "Taken from bluecollar $source_ref ($source_commit) with git filter-repo, so blame and log still reach the original commits. Import paths are rewritten in the next commit." \
+    -m "$co_author" FETCH_HEAD
+}
+
+rewrite_import_paths() {
+  git ls-files -z '*.go' | xargs -0 perl -pi -e "s#\\Q$source_module\\E/#$target_module/#g"
+  commit_all "refactor: import the contract packages from blueprotocol" \
+    "The packages now live in this module, so the paths bluecollar published them under no longer resolve."
+}
+
+keep_only_what_the_host_uses() {
+  local decisions="$1"
+  "${contractsplit[@]}" cut -root "$repository_root" -decisions "$decisions"
+  find . -type d -empty -not -path './.git/*' -delete
+  commit_all "refactor: keep only the contract types a host reads" \
+    "Each type, function and constant stays only if blueclaw uses it or something that does needs it. What only bluecollar uses stays in bluecollar, where its users are."
+}
+
+write_attribution() {
+  cat > model/openaicompatible/attribution.go <<'GO'
+package openaicompatible
+
+import "net/http"
+
+type Attribution struct {
+	ReferrerURL string
+	Title       string
+}
+
+func (attribution Attribution) apply(httpRequest *http.Request) {
+	if attribution.ReferrerURL != "" {
+		httpRequest.Header.Set("HTTP-Referer", attribution.ReferrerURL)
+	}
+	if attribution.Title != "" {
+		httpRequest.Header.Set("X-Title", attribution.Title)
+	}
+}
+GO
+  cat > model/openaicompatible/attribution_test.go <<'GO'
+package openaicompatible
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/yeomyeonggeori/blueprotocol/model"
+)
+
+func headersOfOneChatCompletion(t *testing.T, provider func(endpoint string) *Provider) http.Header {
+	t.Helper()
+	var received http.Header
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		received = request.Header.Clone()
+		writer.Write([]byte(`{"choices":[{"message":{"content":"ok"},"finish_reason":"stop"}]}`))
+	}))
+	defer server.Close()
+	if _, errorValue := provider(server.URL).GenerateChatCompletion(context.Background(), model.ChatCompletionRequest{}); errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	return received
+}
+
+func TestRequestsCarryTheAttributionTheCallerSet(t *testing.T) {
+	received := headersOfOneChatCompletion(t, func(endpoint string) *Provider {
+		return NewProvider(endpoint, "", "example/model").WithAttribution(Attribution{ReferrerURL: "https://example.com/app", Title: "example app"})
+	})
+	if received.Get("HTTP-Referer") != "https://example.com/app" || received.Get("X-Title") != "example app" {
+		t.Fatalf("attribution headers were %v", received)
+	}
+}
+
+func TestRequestsCarryNoAttributionUntilTheCallerSetsOne(t *testing.T) {
+	received := headersOfOneChatCompletion(t, func(endpoint string) *Provider {
+		return NewProvider(endpoint, "", "example/model")
+	})
+	if received.Get("HTTP-Referer") != "" || received.Get("X-Title") != "" {
+		t.Fatalf("a provider that was never told who the app is named one anyway: %v", received)
+	}
+}
+
+func TestEmbeddingRequestsCarryTheAttributionTheCallerSet(t *testing.T) {
+	var received http.Header
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		received = request.Header.Clone()
+		writer.Write([]byte(`{"data":[{"embedding":[0.5]}]}`))
+	}))
+	defer server.Close()
+	provider := NewEmbeddingProvider(server.URL, "", "example/embedding").WithAttribution(Attribution{Title: "example app"})
+	if _, errorValue := provider.GenerateEmbedding(context.Background(), "text"); errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	if received.Get("X-Title") != "example app" || received.Get("HTTP-Referer") != "" {
+		t.Fatalf("attribution headers were %v", received)
+	}
+}
+GO
+}
+
+let_the_caller_set_attribution() {
+  write_attribution
+  perl -0pi -e 's/(\tretryBaseDelay  time\.Duration\n)\}/$1\tattribution     Attribution\n}/; s/func \(provider \*Provider\) UseHTTPClient/func (provider *Provider) WithAttribution(attribution Attribution) *Provider {\n\tprovider.attribution = attribution\n\treturn provider\n}\n\nfunc (provider *Provider) UseHTTPClient/; s/\tsetAttributionHeaders\(httpRequest\)/\tprovider.attribution.apply(httpRequest)/g; s/func setAttributionHeaders\(httpRequest \*http\.Request\) \{\n.*?\n\}\n\n//s' model/openaicompatible/provider.go
+  perl -0pi -e 's/(\thttpClient  \*http\.Client\n)\}/$1\tattribution Attribution\n}/; s/func \(provider \*EmbeddingProvider\) UseHTTPClient/func (provider *EmbeddingProvider) WithAttribution(attribution Attribution) *EmbeddingProvider {\n\tprovider.attribution = attribution\n\treturn provider\n}\n\nfunc (provider *EmbeddingProvider) UseHTTPClient/; s/\tsetAttributionHeaders\(httpRequest\)/\tprovider.attribution.apply(httpRequest)/g' model/openaicompatible/embedding.go
+  if grep -rqE 'setAttributionHeaders' model; then
+    echo "attribution edit did not apply" >&2
+    exit 1
+  fi
+  gofmt -l -w model >/dev/null
+  commit_all "feat: let the caller say which application is calling the model" \
+    "The provider sent bluecollar's name and repository as HTTP-Referer and X-Title to every endpoint, so a host that is not bluecollar was misattributed. WithAttribution sets both, and a provider that was never told sends neither."
+}
+
+require_source_dependencies() {
+  local module version
+  while read -r module version; do
+    go mod edit -require="$module@$version"
+  done < <(sed -n 's#^[[:space:]]*\([^[:space:]]*\.[^[:space:]]*/[^[:space:]]*\) \(v[^[:space:]]*\).*#\1 \2#p' "$bluecollar_checkout/go.mod" | grep -v "^$source_module ")
+  GOFLAGS=-mod=mod go mod tidy
+  commit_all "chore: require what the contract packages import" \
+    "go mod tidy against the copied packages keeps only the modules they use, at the versions bluecollar built them with."
+}
+
+verify_result() {
+  test -z "$(gofmt -l .)"
+  go build ./...
+  go vet ./...
+  go vet -tags llmeval ./...
+  go test -count=1 ./...
+}
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "working tree is not clean" >&2
+  exit 1
+fi
+
+work_directory="$(mktemp -d)"
+trap 'rm -rf "$work_directory" "$contractsplit_directory"' EXIT
+prepare_clone "$work_directory/source"
+plan_split "$work_directory/source" "$work_directory/decisions.json"
+split_history "$work_directory/source"
+git switch -q -C "$branch" "$base_ref"
+merge_history "$work_directory/source"
+rewrite_import_paths
+keep_only_what_the_host_uses "$work_directory/decisions.json"
+let_the_caller_set_attribution
+require_source_dependencies
+verify_result
+echo "moved onto $branch"

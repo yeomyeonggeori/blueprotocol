@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "usage: tools/adopt-blueprotocol <bluecollar-checkout> <blueclaw-checkout>" >&2
+  echo "  BLUEPROTOCOL_URL  where the submodule is cloned from (default: the GitHub repository)" >&2
+  echo "  BLUEPROTOCOL_REF  the blueprotocol commit or branch to pin (default: the clone's HEAD)" >&2
+  exit 2
+}
+
+[ "$#" -eq 2 ] || usage
+
+repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+bluecollar_checkout="$(cd "$1" && pwd)"
+blueclaw_checkout="$(cd "$2" && pwd)"
+blueprotocol_url="${BLUEPROTOCOL_URL:-https://github.com/yeomyeonggeori/blueprotocol.git}"
+blueprotocol_ref="${BLUEPROTOCOL_REF:-}"
+submodule_path=".dependency/blueprotocol"
+source_module="github.com/yeomyeonggeori/bluecollar"
+target_module="github.com/yeomyeonggeori/blueprotocol"
+co_author="Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+contractsplit_directory="$(mktemp -d)"
+trap 'rm -rf "$contractsplit_directory"' EXIT
+(cd "$repository_root" && go build -o "$contractsplit_directory/contractsplit" ./tools/contractsplit)
+contractsplit=("$contractsplit_directory/contractsplit")
+
+cd "$bluecollar_checkout"
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "working tree is not clean" >&2
+  exit 1
+fi
+
+commit_all() {
+  local subject="$1" body="$2"
+  git add -A
+  git commit -q -m "$subject" -m "$body" -m "$co_author"
+}
+
+add_submodule() {
+  git -c protocol.file.allow=always submodule add -q "$blueprotocol_url" "$submodule_path"
+  if [ -n "$blueprotocol_ref" ]; then
+    git -C "$submodule_path" checkout -q "$blueprotocol_ref"
+  fi
+  git add "$submodule_path"
+}
+
+prepare_contracts() {
+  "$repository_root/tools/prepare-contracts" "$bluecollar_checkout"
+  commit_all "refactor: give the contracts names that belong to no harness" \
+    "The same edit tools/move-from-bluecollar makes before it cuts the contract packages out, so what stays here matches what moved."
+}
+
+relocate_what_stays() {
+  "${contractsplit[@]}" relocate -root . -host "$blueclaw_checkout" -layout "$repository_root/tools/contract-layout.json"
+}
+
+write_attribution_package() {
+  mkdir -p attribution
+  cat > attribution/attribution.go <<'GO'
+package attribution
+
+import "github.com/yeomyeonggeori/blueprotocol/model/openaicompatible"
+
+var Self = openaicompatible.Attribution{
+	ReferrerURL: "https://github.com/yeomyeonggeori/bluecollar",
+	Title:       "bluecollar",
+}
+GO
+}
+
+attribute_provider_constructions() {
+  local file
+  write_attribution_package
+  for file in $(find . -name '*.go' -not -path './.dependency/*' -not -path './.git/*' -print0 | xargs -0 grep -l 'openaicompatible\.New\(Embedding\)\?Provider(' || true); do
+    perl -0pi -e 's/(openaicompatible\.New(?:Embedding)?Provider(\((?:[^()]++|(?-1))*\)))/$1.WithAttribution(attribution.Self)/g' "$file"
+    ATTRIBUTION_IMPORT="$source_module/attribution" perl -0pi -e 's/(\t"[^"]*\/model\/openaicompatible"\n)/$1\t"$ENV{ATTRIBUTION_IMPORT}"\n/' "$file"
+  done
+}
+
+point_modules_at_submodule() {
+  go mod edit -require="$target_module@v0.0.0" -replace="$target_module=./$submodule_path"
+  go mod edit -require="$target_module@v0.0.0" -replace="$target_module=../../$submodule_path" cmd/bluecollar-acp/go.mod
+}
+
+check_out_submodules_in_workflow() {
+  perl -0pi -e 's/(      - uses: actions\/checkout\@v4\n)(?!        with)/$1        with:\n          submodules: true\n/' .github/workflows/check.yml
+}
+
+tidy_modules() {
+  GOFLAGS=-mod=mod go mod tidy
+  (cd cmd/bluecollar-acp && GOFLAGS=-mod=mod go mod tidy)
+}
+
+update_documentation() {
+  export STAY_ROWS='| `.dependency/blueprotocol/` | the contract packages `agentcontract`, `toolcontract`, `model`, `taskstate`, `holdrecord`, `acpupdate` and `evaltest`, shared with the host as the blueprotocol submodule |
+| `turnclassification/` | the names and normalization of a turn'"'"'s route, task shape, task level and deliverable, shared by `intake` and `loop` |
+| `iterationcost/` | what one iteration costs, the patience a model call is given and the budget profile of each task level |
+| `llmcalls/` | the schema names of the model calls bluecollar makes |
+| `toolexposure/` | how many tools a plan step is expected to expose |
+| `messageimages/` | the image parts of a message |
+| `contextdescription/` | the prompt text that describes the active goal and the prior task |
+| `decisionconfig/` | the decision model, configured from `BLUECOLLAR_DECISION_ENDPOINT`, `BLUECOLLAR_DECISION_API_KEY` and `BLUECOLLAR_DECISION_MODEL` |
+| `model/tape/` | recording and replaying model calls |
+'
+  for document in README.md DOCS.md; do
+    perl -0pi -e '
+      s/^\| `(?:agentcontract|toolcontract|model|taskstate|holdrecord)\/` \|[^\n]*\n//mg;
+      s/(\| path \| holds \|\n\| ?-+ ?\| ?-+ ?\|\n)/$1$ENV{STAY_ROWS}/;
+    ' "$document"
+  done
+  perl -0pi -e '
+    s/\| `agentcontract`, `toolcontract`, `model`, `taskstate`, `holdrecord` \|/| blueprotocol: `agentcontract`, `toolcontract`, `model`, `taskstate`, `holdrecord` |/;
+    s/They live in `agentcontract`, `toolcontract`, `model` and `taskstate`, so a host can depend on them without depending on the loop\./They live in blueprotocol (`agentcontract`, `toolcontract`, `model` and `taskstate`), so a host can depend on them without depending on the loop or on bluecollar./;
+    s/`model\/decisions` implements it against a decisions endpoint configured by `BLUECOLLAR_DECISION_ENDPOINT`/`model\/decisions` in blueprotocol implements it against a decisions endpoint, which `decisionconfig` configures from `BLUECOLLAR_DECISION_ENDPOINT`/;
+    s/The names are constants in `toolcontract\/kernel_tools\.go`\./The names are constants in blueprotocol'"'"'s `toolcontract\/kernel_tools.go`./;
+    s/(### Packages\n\n)/$1The contract packages come from the blueprotocol module, pinned as the `.dependency\/blueprotocol` submodule.\n\n/;
+  ' DOCS.md
+  grep -q 'decisionconfig' DOCS.md && grep -q 'decisionconfig' README.md || { echo "documentation edit did not apply" >&2; exit 1; }
+}
+
+verify_result() {
+  find . -name '*.go' -not -path './.dependency/*' -not -path './.git/*' -print0 | xargs -0 gofmt -w
+  go build ./...
+  go vet ./...
+  go vet -tags llmeval ./...
+  go test -count=1 ./...
+  (cd cmd/bluecollar-acp && go build ./... && go vet ./... && go test -count=1 ./...)
+}
+
+prepare_contracts
+add_submodule
+relocate_what_stays
+attribute_provider_constructions
+point_modules_at_submodule
+check_out_submodules_in_workflow
+update_documentation
+tidy_modules
+verify_result
+commit_all "refactor: take the contract packages from blueprotocol" \
+  "The contract packages moved to blueprotocol so that neither bluecollar nor its hosts own them. What only bluecollar uses stays here, in the package of its users. bluecollar names itself to the model endpoint through the attribution package, and blueprotocol is pinned as the $submodule_path submodule."
+echo "adopted blueprotocol in $bluecollar_checkout"

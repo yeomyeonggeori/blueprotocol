@@ -1,0 +1,37 @@
+{
+  "forceMoved": [
+    "agentcontract/harnesstest",
+    "evaltest",
+    "toolcontract/descriptor_schema.go"
+  ],
+  "homes": {
+    "agentcontract/intake_decision.go": "turnclassification",
+    "agentcontract/turn_decision.go": "turnclassification",
+    "agentcontract/task_level.go": "turnclassification",
+    "agentcontract/iteration_cost.go": "iterationcost",
+    "agentcontract/llm_call_ledger.go": "llmcalls",
+    "toolcontract/kernel_tools.go": "toolexposure",
+    "model/decisions/openrouter.go": "decisionconfig",
+    "agentcontract/intake_normalization.go": "turnclassification",
+    "agentcontract/task_level_profile.go": "iterationcost",
+    "agentcontract/prior_task_context_description.go": "contextdescription",
+    "agentcontract/active_goal_description.go": "contextdescription",
+    "agentcontract/run_options.go": "turnoptions",
+    "agentcontract/routing_context.go": "turnclassification"
+  },
+  "symbolHomes": {
+    "agentcontract.AgentImageToMessagePart": "messageimages",
+    "agentcontract.ImageMessageParts": "messageimages",
+    "agentcontract.ImagePartsOf": "messageimages"
+  },
+  "notShared": [
+    "agentcontract.AgentActionSchemaName",
+    "agentcontract.TurnRouterSchemaName",
+    "agentcontract.AttachmentDescriptionSchemaName"
+  ],
+  "hostIgnore": [
+    "internal/app",
+    "internal/bluecollaracp",
+    "internal/e2e"
+  ]
+}
