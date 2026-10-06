@@ -24,6 +24,7 @@ type Provider struct {
 	reasoningEffort string
 	httpClient      *http.Client
 	retryBaseDelay  time.Duration
+	attribution     Attribution
 }
 
 func NewProvider(endpointURL string, apiKey string, modelName string) *Provider {
@@ -34,6 +35,11 @@ func NewProvider(endpointURL string, apiKey string, modelName string) *Provider 
 		httpClient:     http.DefaultClient,
 		retryBaseDelay: transientRetryBaseDelay,
 	}
+}
+
+func (provider *Provider) WithAttribution(attribution Attribution) *Provider {
+	provider.attribution = attribution
+	return provider
 }
 
 func (provider *Provider) UseHTTPClient(httpClient *http.Client) {
@@ -281,7 +287,7 @@ func (provider *Provider) postOnce(ctx context.Context, body []byte) ([]byte, po
 		return nil, postAttemptOutcome{}, errorValue
 	}
 	httpRequest.Header.Set("Content-Type", "application/json")
-	setAttributionHeaders(httpRequest)
+	provider.attribution.apply(httpRequest)
 	if provider.apiKey != "" {
 		httpRequest.Header.Set("Authorization", "Bearer "+provider.apiKey)
 	}
@@ -304,11 +310,6 @@ func (provider *Provider) postOnce(ctx context.Context, body []byte) ([]byte, po
 	}
 	model.RecordWireExchange(ctx, model.WireExchange{Endpoint: httpRequest.URL.String(), Request: string(body), Response: string(responseBody)})
 	return responseBody, postAttemptOutcome{}, nil
-}
-
-func setAttributionHeaders(httpRequest *http.Request) {
-	httpRequest.Header.Set("HTTP-Referer", "https://github.com/yeomyeonggeori/bluecollar")
-	httpRequest.Header.Set("X-Title", "bluecollar")
 }
 
 func isTransientStatus(statusCode int) bool {
@@ -568,7 +569,7 @@ func (provider *Provider) ContextWindowTokens(ctx context.Context) int {
 	if errorValue != nil {
 		return 0
 	}
-	setAttributionHeaders(httpRequest)
+	provider.attribution.apply(httpRequest)
 	if provider.apiKey != "" {
 		httpRequest.Header.Set("Authorization", "Bearer "+provider.apiKey)
 	}

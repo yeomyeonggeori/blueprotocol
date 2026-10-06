@@ -14,6 +14,7 @@ type EmbeddingProvider struct {
 	apiKey      string
 	modelName   string
 	httpClient  *http.Client
+	attribution Attribution
 }
 
 func NewEmbeddingProvider(endpointURL string, apiKey string, modelName string) *EmbeddingProvider {
@@ -23,6 +24,11 @@ func NewEmbeddingProvider(endpointURL string, apiKey string, modelName string) *
 		modelName:   strings.TrimSpace(modelName),
 		httpClient:  http.DefaultClient,
 	}
+}
+
+func (provider *EmbeddingProvider) WithAttribution(attribution Attribution) *EmbeddingProvider {
+	provider.attribution = attribution
+	return provider
 }
 
 func (provider *EmbeddingProvider) UseHTTPClient(httpClient *http.Client) {
@@ -54,7 +60,7 @@ func (provider *EmbeddingProvider) GenerateEmbedding(ctx context.Context, input 
 		return nil, errorValue
 	}
 	httpRequest.Header.Set("Content-Type", "application/json")
-	setAttributionHeaders(httpRequest)
+	provider.attribution.apply(httpRequest)
 	if provider.apiKey != "" {
 		httpRequest.Header.Set("Authorization", "Bearer "+provider.apiKey)
 	}
