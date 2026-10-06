@@ -21,9 +21,9 @@ func TestDependencyClosureExcludesHarnessAndHost(t *testing.T) {
 
 func listDependencies(t *testing.T) []string {
 	t.Helper()
-	output, err := exec.Command("go", "list", "-deps", "./...").Output()
-	if err != nil {
-		t.Fatalf("go list -deps ./...: %v", err)
+	output, errorValue := exec.Command("go", "list", "-deps", "./...").Output()
+	if errorValue != nil {
+		t.Fatalf("go list -deps ./...: %v", errorValue)
 	}
 	return strings.Fields(string(output))
 }
