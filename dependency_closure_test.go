@@ -70,7 +70,7 @@ func forbiddenWords() []string {
 
 func isExemptFromVocabulary(location string, entry fs.DirEntry) bool {
 	if entry.IsDir() {
-		return entry.Name() == ".git" || location == "tools"
+		return entry.Name() == ".git"
 	}
 	return location == "README.md" || location == "dependency_closure_test.go"
 }
