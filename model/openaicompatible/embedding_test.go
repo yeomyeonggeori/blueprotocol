@@ -84,3 +84,27 @@ func TestEmbeddingProviderSendsNoAuthorizationWithoutAKey(t *testing.T) {
 		t.Fatalf("an endpoint that was given no key is asked without one, got %q", authorization)
 	}
 }
+
+func TestEmbeddingProviderAppliesEmbeddingGemmaTemplatesPerInputType(t *testing.T) {
+	inputs := []string{}
+	server := httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		var requestedDocument embeddingRequest
+		json.NewDecoder(request.Body).Decode(&requestedDocument)
+		inputs = append(inputs, requestedDocument.Input)
+		json.NewEncoder(responseWriter).Encode(map[string]any{"data": []map[string]any{{"embedding": []float64{1}}}})
+	}))
+	defer server.Close()
+	provider := NewEmbeddingProvider(server.URL+"/v1", "", "google/embeddinggemma-2")
+
+	if _, errorValue := provider.EmbedQuery(context.Background(), "slides"); errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	if _, errorValue := provider.EmbedDocuments(context.Background(), []string{"a", "b"}); errorValue != nil {
+		t.Fatal(errorValue)
+	}
+
+	expected := []string{"task: search result | query: slides", "title: none | text: a", "title: none | text: b"}
+	if len(inputs) != 3 || inputs[0] != expected[0] || inputs[1] != expected[1] || inputs[2] != expected[2] {
+		t.Fatalf("expected %v, got %v", expected, inputs)
+	}
+}

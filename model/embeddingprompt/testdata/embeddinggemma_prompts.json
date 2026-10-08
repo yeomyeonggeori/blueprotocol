@@ -1,0 +1,10 @@
+[
+  {"model": "google/embeddinggemma-2", "inputType": "query", "text": "where is the Q3 review", "expected": "task: search result | query: where is the Q3 review"},
+  {"model": "google/embeddinggemma-2", "inputType": "document", "text": "이샘플 keeps the ledger", "expected": "title: none | text: 이샘플 keeps the ledger"},
+  {"model": "embeddinggemma-2-Q8_0", "inputType": "query", "text": "slides", "expected": "task: search result | query: slides"},
+  {"model": "google/embeddinggemma-300m", "inputType": "document", "text": "slides", "expected": "title: none | text: slides"},
+  {"model": "google/embeddinggemma-2", "inputType": "", "text": "untyped", "expected": "untyped"},
+  {"model": "baai/bge-m3", "inputType": "query", "text": "slides", "expected": "slides"},
+  {"model": "baai/bge-m3", "inputType": "document", "text": "slides", "expected": "slides"},
+  {"model": "example/not-embeddinggemma", "inputType": "query", "text": "slides", "expected": "slides"}
+]

@@ -7,6 +7,8 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+
+	"github.com/yeomyeonggeori/blueprotocol/model/embeddingprompt"
 )
 
 type EmbeddingProvider struct {
@@ -51,6 +53,26 @@ type embeddingResponse struct {
 }
 
 func (provider *EmbeddingProvider) GenerateEmbedding(ctx context.Context, input string) ([]float32, error) {
+	return provider.embed(ctx, input)
+}
+
+func (provider *EmbeddingProvider) EmbedQuery(ctx context.Context, text string) ([]float32, error) {
+	return provider.embed(ctx, embeddingprompt.Apply(provider.modelName, embeddingprompt.InputTypeQuery, text))
+}
+
+func (provider *EmbeddingProvider) EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error) {
+	embeddings := make([][]float32, 0, len(texts))
+	for _, text := range texts {
+		embedding, errorValue := provider.embed(ctx, embeddingprompt.Apply(provider.modelName, embeddingprompt.InputTypeDocument, text))
+		if errorValue != nil {
+			return nil, errorValue
+		}
+		embeddings = append(embeddings, embedding)
+	}
+	return embeddings, nil
+}
+
+func (provider *EmbeddingProvider) embed(ctx context.Context, input string) ([]float32, error) {
 	body, errorValue := json.Marshal(embeddingRequest{Model: provider.modelName, Input: input})
 	if errorValue != nil {
 		return nil, errorValue
