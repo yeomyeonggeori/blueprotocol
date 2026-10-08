@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/yeomyeonggeori/blueprotocol/model"
 )
 
 func TestEmbeddingProviderAsksTheEndpointItWasGiven(t *testing.T) {
@@ -108,3 +110,5 @@ func TestEmbeddingProviderAppliesEmbeddingGemmaTemplatesPerInputType(t *testing.
 		t.Fatalf("expected %v, got %v", expected, inputs)
 	}
 }
+
+var _ model.EmbeddingProvider = (*EmbeddingProvider)(nil)
