@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/yeomyeonggeori/blueprotocol/model"
+	"github.com/yeomyeonggeori/blueprotocol/model/transientretry"
 )
 
 func retryTestProvider(serverURL string) *Provider {
@@ -67,8 +68,8 @@ func TestRetriesGiveUpAfterTheAttemptBudget(t *testing.T) {
 	if errorValue == nil {
 		t.Fatal("an endpoint that never recovers must surface its error instead of retrying forever")
 	}
-	if requestCount != 1+transientRetryCount {
-		t.Fatalf("expected %d attempts, got %d", 1+transientRetryCount, requestCount)
+	if requestCount != 1+transientretry.Retries {
+		t.Fatalf("expected %d attempts, got %d", 1+transientretry.Retries, requestCount)
 	}
 	if !strings.Contains(errorValue.Error(), "503") {
 		t.Fatalf("the surfaced error must carry the endpoint's status, got: %v", errorValue)
@@ -98,18 +99,6 @@ func TestACancelledRunDoesNotKeepRetrying(t *testing.T) {
 	}
 	if time.Since(started) > 10*time.Second {
 		t.Fatal("cancellation must cut the retry wait short instead of sleeping it out")
-	}
-}
-
-func TestRetryDelayHonoursTheEndpointsRequestedWaitWithinTheCeiling(t *testing.T) {
-	if delay := retryDelay(time.Second, 0, 5*time.Second); delay != 5*time.Second {
-		t.Fatalf("an endpoint that names its recovery time knows it better than our backoff, got %v", delay)
-	}
-	if delay := retryDelay(time.Second, 0, time.Hour); delay != transientRetryDelayCeiling {
-		t.Fatalf("a server asking for an hour would silently eat the elapsed budget, got %v", delay)
-	}
-	if delay := retryDelay(time.Second, 2, 0); delay != 4*time.Second {
-		t.Fatalf("expected exponential backoff, got %v", delay)
 	}
 }
 

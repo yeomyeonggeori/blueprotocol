@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/yeomyeonggeori/blueprotocol/model"
+	"github.com/yeomyeonggeori/blueprotocol/model/transientretry"
 )
 
 const DefaultEndpointURL = "https://openrouter.ai/api/alpha/decisions"
@@ -49,11 +50,12 @@ func EndpointFromEnvironment(names EnvironmentNames) (Endpoint, error) {
 }
 
 func (endpoint Endpoint) DecisionModel() model.DecisionModel {
-	return decisionModel{endpoint: endpoint}
+	return decisionModel{endpoint: endpoint, retryBaseDelay: transientretry.BaseDelay}
 }
 
 type decisionModel struct {
-	endpoint Endpoint
+	endpoint       Endpoint
+	retryBaseDelay time.Duration
 }
 
 type decisionRequestDocument struct {
@@ -114,30 +116,40 @@ func (decisionModel decisionModel) Decide(ctx context.Context, request model.Dec
 }
 
 func (decisionModel decisionModel) post(ctx context.Context, requestDocument []byte) (decisionResponseDocument, error) {
-	httpRequest, errorValue := http.NewRequestWithContext(ctx, http.MethodPost, decisionModel.endpoint.URL, bytes.NewReader(requestDocument))
+	body, errorValue := transientretry.Do(ctx, decisionModel.retryBaseDelay, func() ([]byte, transientretry.Outcome, error) {
+		return decisionModel.postOnce(ctx, requestDocument)
+	})
 	if errorValue != nil {
 		return decisionResponseDocument{}, errorValue
 	}
-	httpRequest.Header.Set("Content-Type", "application/json")
-	httpRequest.Header.Set("Authorization", "Bearer "+decisionModel.endpoint.APIKey)
-	httpResponse, errorValue := decisionModel.httpClient().Do(httpRequest)
-	if errorValue != nil {
-		return decisionResponseDocument{}, errorValue
-	}
-	defer httpResponse.Body.Close()
-	body, errorValue := io.ReadAll(httpResponse.Body)
-	if errorValue != nil {
-		return decisionResponseDocument{}, errorValue
-	}
-	if httpResponse.StatusCode != http.StatusOK {
-		return decisionResponseDocument{}, errors.New("decisions endpoint answered " + httpResponse.Status + ": " + strings.TrimSpace(string(body)))
-	}
-	model.RecordWireExchange(ctx, model.WireExchange{Endpoint: httpRequest.URL.String(), Request: string(requestDocument), Response: string(body)})
 	var responseDocument decisionResponseDocument
 	if errorValue := json.Unmarshal(body, &responseDocument); errorValue != nil {
 		return decisionResponseDocument{}, errorValue
 	}
 	return responseDocument, nil
+}
+
+func (decisionModel decisionModel) postOnce(ctx context.Context, requestDocument []byte) ([]byte, transientretry.Outcome, error) {
+	httpRequest, errorValue := http.NewRequestWithContext(ctx, http.MethodPost, decisionModel.endpoint.URL, bytes.NewReader(requestDocument))
+	if errorValue != nil {
+		return nil, transientretry.Outcome{}, errorValue
+	}
+	httpRequest.Header.Set("Content-Type", "application/json")
+	httpRequest.Header.Set("Authorization", "Bearer "+decisionModel.endpoint.APIKey)
+	httpResponse, errorValue := decisionModel.httpClient().Do(httpRequest)
+	if errorValue != nil {
+		return nil, transientretry.TransportOutcome(ctx), errorValue
+	}
+	defer httpResponse.Body.Close()
+	body, errorValue := io.ReadAll(httpResponse.Body)
+	if errorValue != nil {
+		return nil, transientretry.TransportOutcome(ctx), errorValue
+	}
+	if httpResponse.StatusCode != http.StatusOK {
+		return nil, transientretry.StatusOutcome(httpResponse), errors.New("decisions endpoint answered " + httpResponse.Status + ": " + strings.TrimSpace(string(body)))
+	}
+	model.RecordWireExchange(ctx, model.WireExchange{Endpoint: httpRequest.URL.String(), Request: string(requestDocument), Response: string(body)})
+	return body, transientretry.Outcome{}, nil
 }
 
 func (decisionModel decisionModel) httpClient() *http.Client {
