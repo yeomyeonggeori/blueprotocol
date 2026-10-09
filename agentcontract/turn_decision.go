@@ -30,7 +30,6 @@ const (
 	TurnRouteStartTask      TurnRoute = "start_task"
 	TurnRouteAnswerMeta     TurnRoute = "answer_meta"
 	TurnRouteClarify        TurnRoute = "clarify"
-	TurnRouteConsume        TurnRoute = "consume"
 	TurnRouteGiveUp         TurnRoute = "give_up"
 
 	ExpectedToolCountNone    ExpectedToolCount = "none"
@@ -92,7 +91,7 @@ func NormalizeIntakeClassification(classification IntakeClassification) IntakeCl
 }
 
 var TurnRouteNames = []string{
-	string(TurnRouteConsume), string(TurnRouteAnswerQuestion), string(TurnRouteAnswerMeta), string(TurnRouteClarify),
+	string(TurnRouteAnswerQuestion), string(TurnRouteAnswerMeta), string(TurnRouteClarify),
 	string(TurnRouteStartTask), string(TurnRouteContinueTask), string(TurnRouteReviseTask), string(TurnRouteGiveUp),
 }
 
