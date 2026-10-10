@@ -36,7 +36,6 @@ func AttachmentFactsFromParts(parts []AgentPart) []IntakeAttachmentFact {
 const (
 	IntakeQuestionWork                    = "work"
 	IntakeQuestionRelation                = "relation"
-	IntakeQuestionClarify                 = "clarify"
 	IntakeQuestionExpectedToolCount       = "expectedToolCount"
 	IntakeQuestionSingleToolChoice        = "singleToolChoice"
 	IntakeQuestionIsExternalSendRequested = "isExternalSendRequested"

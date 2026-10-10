@@ -18,6 +18,8 @@ func TestWorkIsReadByWeighingNoneAgainstEverythingElse(t *testing.T) {
 		{"none stands when it outweighs all the rest together", map[string]float64{"none": 0.55, "easy": 0.3, "normal": 0.15}, WorkNone},
 		{"doable work split three ways outweighs a single impossible", map[string]float64{"none": 0.1, "impossible": 0.36, "easy": 0.24, "normal": 0.18, "hard": 0.12}, WorkEasy},
 		{"impossible stands when it outweighs all doable work", map[string]float64{"none": 0.2, "impossible": 0.5, "easy": 0.3}, WorkImpossible},
+		{"doable work split three ways outweighs a single unclear", map[string]float64{"none": 0.1, "unclear": 0.4, "easy": 0.3, "normal": 0.2}, WorkEasy},
+		{"unclear stands when it outweighs all doable work", map[string]float64{"none": 0.1, "unclear": 0.55, "easy": 0.35}, WorkUnclear},
 		{"the likeliest doable level is the one taken", map[string]float64{"none": 0.2, "easy": 0.2, "normal": 0.45, "hard": 0.15}, WorkNormal},
 	}
 	for _, testCase := range testCases {

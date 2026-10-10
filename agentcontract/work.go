@@ -10,9 +10,10 @@ const (
 	WorkNormal     Work = "normal"
 	WorkHard       Work = "hard"
 	WorkImpossible Work = "impossible"
+	WorkUnclear    Work = "unclear"
 )
 
-var WorkNames = []string{string(WorkNone), string(WorkEasy), string(WorkNormal), string(WorkHard), string(WorkImpossible)}
+var WorkNames = []string{string(WorkNone), string(WorkEasy), string(WorkNormal), string(WorkHard), string(WorkImpossible), string(WorkUnclear)}
 
 var DoableWorkNames = []string{string(WorkEasy), string(WorkNormal), string(WorkHard)}
 
