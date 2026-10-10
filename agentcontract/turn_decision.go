@@ -70,7 +70,6 @@ type IntakeDecision struct {
 	ClarificationOptions    []ClarificationOption `json:"clarificationOptions,omitempty"`
 	HasIndependentWork      bool                  `json:"hasIndependentWork"`
 	ExpectedToolCount       ExpectedToolCount     `json:"expectedToolCount,omitempty"`
-	RawDecisionRoute        TurnRoute             `json:"rawDecisionRoute,omitempty"`
 }
 
 func (intakeDecision IntakeDecision) Validate() error {
