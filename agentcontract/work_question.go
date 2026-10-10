@@ -11,9 +11,9 @@ func WorkQuestion(about string, agentName string) model.DecisionQuestion {
 		Instructions: about + "Does it ask " + agentName + " to do work that takes tools and time, and how much? Work asked of somebody else is none.",
 		OptionDescriptions: map[string]string{
 			string(WorkNone):       "nothing for " + agentName + " to do. Words alone answer it, from what is visible, common knowledge or judgment, including a translation, an explanation or a draft written in the reply; or nobody asked " + agentName + " for anything",
-			string(WorkEasy):       "ordinary bounded work with a clear short outcome and one final reply, even when it takes a few tools: a lookup, a record, a change",
-			string(WorkNormal):     "multi-step work, research, or a document or file to produce, where progress updates are useful",
-			string(WorkHard):       "long, wide, deployment-shaped or verification-heavy work",
+			string(WorkEasy):       "a short piece of work: a lookup, one record or one change",
+			string(WorkNormal):     "work in several steps: research, several records, or a document or file to produce",
+			string(WorkHard):       "long, wide or verification-heavy work",
 			string(WorkImpossible): "work that cannot be done: physically impossible, nonsensical, or plainly improper on its face. Never for a permission concern or a tool " + agentName + " might lack, which the work itself finds out",
 		},
 	}.Question()
