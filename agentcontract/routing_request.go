@@ -16,6 +16,7 @@ func (turnRequest AgentTurnRequest) RoutingRequest() AgentRequest {
 		ScheduledRun:         turnRequest.ScheduledRun,
 		ActiveGoal:           turnRequest.ActiveGoal,
 		PriorTask:            turnRequest.PriorTask,
+		DecidedWork:          turnRequest.DecidedWork,
 		TurnStartedAt:        turnRequest.TurnStartedAt,
 		EnvironmentNow:       turnRequest.EnvironmentNow,
 		Company:              turnRequest.Company,

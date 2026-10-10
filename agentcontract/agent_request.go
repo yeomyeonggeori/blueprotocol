@@ -42,8 +42,7 @@ type AgentRequest struct {
 	ActiveTask                 ActiveTaskContext
 	PendingInput               PendingInputContext
 	TaskShape                  TaskShape
-	AllowGiveUp                bool
-	AllowGiveUpReason          string
+	DecidedWork                Work
 	SkipSkillSelection         bool
 	TaskLevel                  TaskLevel
 	TurnStartedAt              time.Time
@@ -148,6 +147,7 @@ type AgentTurnRequest struct {
 	SkipSkillSelection           bool
 	TaskShape                    TaskShape
 	TaskLevel                    TaskLevel
+	DecidedWork                  Work
 	TurnStartedAt                time.Time
 	ExecutionStartedAt           time.Time
 	EnvironmentNow               time.Time
