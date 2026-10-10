@@ -34,6 +34,16 @@ func ReadWork(answer model.DecisionAnswer) Work {
 	return likeliestWork(answer)
 }
 
+func ReadDoableWork(answer model.DecisionAnswer) Work {
+	if len(answer.Probabilities) == 0 {
+		if work := NormalizeWork(strings.TrimSpace(answer.Choice)); work.IsDoable() {
+			return work
+		}
+		return WorkEasy
+	}
+	return likeliestWork(answer)
+}
+
 func weightOf(answer model.DecisionAnswer, optionNames []string) float64 {
 	weight := 0.0
 	for _, optionName := range optionNames {

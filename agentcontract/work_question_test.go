@@ -51,3 +51,13 @@ func TestTheWorkQuestionOffersTheWorkVocabulary(t *testing.T) {
 		}
 	}
 }
+
+func TestWorkKnownToExistIsReadAsItsLikeliestLevel(t *testing.T) {
+	idle := model.DecisionAnswer{Choice: "none", Probabilities: map[string]float64{"none": 0.8, "easy": 0.05, "normal": 0.1, "impossible": 0.05}}
+	if work := ReadDoableWork(idle); work != WorkNormal {
+		t.Fatalf("expected the likeliest doable level when work is a given, got %q", work)
+	}
+	if work := ReadDoableWork(model.DecisionAnswer{Choice: "none"}); work != WorkEasy {
+		t.Fatalf("expected easy when the bare choice is not doable, got %q", work)
+	}
+}
