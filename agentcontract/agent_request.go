@@ -9,12 +9,9 @@ import (
 )
 
 type AgentRequest struct {
-	RequesterPersonID          string
-	RequesterName              string
+	RequesterIdentity
 	AgentIdentity              AgentIdentity
-	RequesterCallingName       string
-	RequesterHandle            string
-	RequesterCircles           []string
+	Platform                   string
 	SourceReference            string
 	IsRuntimeRestartResume     bool
 	ExistingTaskRunID          string
@@ -94,10 +91,7 @@ type CarriedOutCall struct {
 }
 
 type AgentTurnRequest struct {
-	RequesterPersonID            string
-	RequesterEmail               string
-	RequesterName                string
-	RequesterPlatformUserID      string
+	RequesterIdentity
 	SourceReference              string
 	IsRuntimeRestartResume       bool
 	ExistingTaskRunID            string
@@ -105,9 +99,6 @@ type AgentTurnRequest struct {
 	OriginReplyTargetID          string
 	OriginIsThread               bool
 	Platform                     string
-	RequesterCallingName         string
-	RequesterHandle              string
-	RequesterCircles             []string
 	Company                      CompanyContext
 	ProfileName                  string
 	ConversationID               string
