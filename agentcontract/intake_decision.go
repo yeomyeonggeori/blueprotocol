@@ -34,15 +34,14 @@ func AttachmentFactsFromParts(parts []AgentPart) []IntakeAttachmentFact {
 }
 
 const (
-	IntakeQuestionWork                    = "work"
-	IntakeQuestionRelation                = "relation"
-	IntakeQuestionExpectedToolCount       = "expectedToolCount"
-	IntakeQuestionSingleToolChoice        = "singleToolChoice"
-	IntakeQuestionIsExternalSendRequested = "isExternalSendRequested"
-	IntakeQuestionTaskShape               = "taskShape"
-	IntakeQuestionDeliverableKind         = "deliverableKind"
-	IntakeQuestionPriorTaskReference      = "priorTaskReference"
-	IntakeQuestionResponseLanguage        = "responseLanguage"
+	IntakeQuestionWork               = "work"
+	IntakeQuestionRelation           = "relation"
+	IntakeQuestionExpectedToolCount  = "expectedToolCount"
+	IntakeQuestionSingleToolChoice   = "singleToolChoice"
+	IntakeQuestionTaskShape          = "taskShape"
+	IntakeQuestionDeliverableKind    = "deliverableKind"
+	IntakeQuestionPriorTaskReference = "priorTaskReference"
+	IntakeQuestionResponseLanguage   = "responseLanguage"
 
 	IntakeQuestionPrefixFormat = "format."
 	IntakeQuestionPrefixTool   = "tool."
