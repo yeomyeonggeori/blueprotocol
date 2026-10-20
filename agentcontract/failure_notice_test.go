@@ -431,3 +431,15 @@ func TestFailureNoticePromptCarriesWhichRequestedChangesWereCarriedOut(t *testin
 		t.Fatal("a report without requested changes must not carry the instruction")
 	}
 }
+
+func TestEveryFailureNoticePromptSaysNothingRunsAfterIt(t *testing.T) {
+	for _, phase := range []string{"failure", "stall", "limit", "delivery", "task_intake"} {
+		prompt := BuildFailureNoticePrompt(FailureReport{Phase: phase, StopReason: "tool failed"})
+		if !strings.Contains(prompt, NothingRunsAfterTheLastWord) {
+			t.Fatalf("the %s notice prompt does not say that nothing runs after it", phase)
+		}
+	}
+	if !strings.Contains(BuildIntakeNoticePrompt(IntakeClassificationUnsupported, FailureReport{}), NothingRunsAfterTheLastWord) {
+		t.Fatal("the intake notice prompt does not say that nothing runs after it")
+	}
+}

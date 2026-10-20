@@ -17,6 +17,8 @@ const (
 	FinishMessageMaximumCharacters = 1200
 )
 
+const NothingRunsAfterTheLastWord = "Nothing runs after a task's last message: the work continues only if the person replies or asks again. Never say a retry or recovery is underway, and never promise to try again, check, follow up or report back on your own."
+
 type FailureReport struct {
 	Phase               string              `json:"phase,omitempty"`
 	StepName            string              `json:"stepName,omitempty"`
@@ -184,6 +186,7 @@ func BuildIntakeNoticePrompt(classification IntakeClassification, report Failure
 		ResponseLanguageInstruction(report.ResponseLanguage),
 		intakeNoticeIntent(classification),
 		"Use only the compact intake context below. Do not infer from earlier conversation history.",
+		NothingRunsAfterTheLastWord,
 		"Write one or two natural sentences.",
 		"Do not expose provider errors, internal service URLs, internal filesystem paths, or tokens.",
 		"Compact intake context:\n" + marshalEventBody(report),
@@ -459,7 +462,7 @@ func BuildFailureNoticePrompt(report FailureReport) string {
 		sections = append(sections, "For an intake stop, name the concrete work the router was preparing and state that this turn's execution loop did not start. plannedInterpretation and unverifiedUserFacingReply describe an unverified interpretation, never completed work; if they conflict with originalRequest, expose that misunderstanding plainly. Distinguish earlier results and carried-out approval calls from this turn's loop. Do not invent findings, saved progress, resumability, or missing user input. Do not end with a generic request to repeat the request.")
 	}
 	sections = append(sections,
-		"Never claim a retry or recovery is currently underway, and never promise the system will follow up on its own: nothing runs after this notice. Work continues only if the user replies or asks again.",
+		NothingRunsAfterTheLastWord,
 		"Write one or two natural sentences.",
 		"Keep the notice under 600 Korean characters or an equivalent short length.",
 		"Preserve the safe meaning of the failure, but do not expose provider errors, stack traces, internal service URLs, internal filesystem paths, tokens, or serialized reply status.",
