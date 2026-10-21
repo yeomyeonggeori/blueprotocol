@@ -54,22 +54,21 @@ type ClarificationOption struct {
 }
 
 type IntakeDecision struct {
-	Classification          IntakeClassification  `json:"classification"`
-	TaskShape               TaskShape             `json:"taskShape"`
-	TaskLevel               TaskLevel             `json:"level"`
-	RequestedOutputFormats  []string              `json:"requestedOutputFormats"`
-	DeliverableKind         DeliverableKind       `json:"deliverableKind,omitempty"`
-	ExpectedResults         []ExpectedResult      `json:"expectedResults,omitempty"`
-	ResponseLanguage        string                `json:"responseLanguage"`
-	Reason                  string                `json:"reason"`
-	UserFacingReply         string                `json:"userFacingReply"`
-	IsExternalSendRequested bool                  `json:"isExternalSendRequested"`
-	InitialToolNames        []string              `json:"initialToolNames,omitempty"`
-	PriorTaskReference      PriorTaskReference    `json:"priorTaskReference,omitempty"`
-	ClarificationQuestion   string                `json:"clarificationQuestion,omitempty"`
-	ClarificationOptions    []ClarificationOption `json:"clarificationOptions,omitempty"`
-	HasIndependentWork      bool                  `json:"hasIndependentWork"`
-	ExpectedToolCount       ExpectedToolCount     `json:"expectedToolCount,omitempty"`
+	Classification         IntakeClassification  `json:"classification"`
+	TaskShape              TaskShape             `json:"taskShape"`
+	TaskLevel              TaskLevel             `json:"level"`
+	RequestedOutputFormats []string              `json:"requestedOutputFormats"`
+	DeliverableKind        DeliverableKind       `json:"deliverableKind,omitempty"`
+	ExpectedResults        []ExpectedResult      `json:"expectedResults,omitempty"`
+	ResponseLanguage       string                `json:"responseLanguage"`
+	Reason                 string                `json:"reason"`
+	UserFacingReply        string                `json:"userFacingReply"`
+	InitialToolNames       []string              `json:"initialToolNames,omitempty"`
+	PriorTaskReference     PriorTaskReference    `json:"priorTaskReference,omitempty"`
+	ClarificationQuestion  string                `json:"clarificationQuestion,omitempty"`
+	ClarificationOptions   []ClarificationOption `json:"clarificationOptions,omitempty"`
+	HasIndependentWork     bool                  `json:"hasIndependentWork"`
+	ExpectedToolCount      ExpectedToolCount     `json:"expectedToolCount,omitempty"`
 }
 
 func (intakeDecision IntakeDecision) Validate() error {
