@@ -63,10 +63,6 @@ type spentBody struct {
 	ToolInput json.RawMessage `json:"toolInput,omitempty"`
 }
 
-type scopeGrantedBody struct {
-	Scope string `json:"scope"`
-}
-
 func Open(taskRunStore taskstate.TaskRunStore, taskRunID string, call agentcontract.HeldCall, choices []Choice) Hold {
 	call.HoldID = taskstate.NewIdentifier()
 	taskRunStore.AppendTaskEvent(taskRunID, agentcontract.TaskEventApprovalHoldOpened, marshal(openedBody{HeldCall: call, Choices: choices}))
@@ -74,11 +70,7 @@ func Open(taskRunStore taskstate.TaskRunStore, taskRunID string, call agentcontr
 }
 
 func Decide(taskRunStore taskstate.TaskRunStore, taskRunID string, holdID string, decision string, source string) {
-	pendingHold, isPending := pendingHoldByID(taskRunStore.ListTaskEvent(taskRunID), holdID)
 	taskRunStore.AppendTaskEvent(taskRunID, agentcontract.TaskEventApprovalDecided, marshal(decidedBody{HoldID: holdID, Decision: decision, Source: source}))
-	if isPending && decision == DecisionApprove {
-		grantScope(taskRunStore, taskRunID, pendingHold)
-	}
 }
 
 func Spend(taskRunStore taskstate.TaskRunStore, taskRunID string, holdID string, toolName string, toolInput json.RawMessage) {
@@ -94,44 +86,20 @@ func SpendApprovedCall(taskRunStore taskstate.TaskRunStore, taskRunID string, to
 	return approved, true
 }
 
-func grantScope(taskRunStore taskstate.TaskRunStore, taskRunID string, approvedHold Hold) {
-	approvalScope := strings.TrimSpace(approvedHold.Call.ApprovalScope)
-	if approvalScope == "" {
-		return
-	}
-	taskRunStore.AppendTaskEvent(taskRunID, agentcontract.TaskEventApprovalScopeGranted, marshal(scopeGrantedBody{Scope: approvalScope}))
-}
-
-type Ledger struct {
-	Holds         []Hold
-	grantedScopes map[string]bool
-}
-
-func LedgerOf(taskEvents []agentcontract.TaskEvent) Ledger {
-	ledger := Ledger{grantedScopes: map[string]bool{}}
+func Holds(taskEvents []agentcontract.TaskEvent) []Hold {
+	var holds []Hold
 	for _, taskEvent := range taskEvents {
 		switch taskEvent.Name {
 		case agentcontract.TaskEventApprovalHoldOpened:
-			ledger.Holds = append(ledger.Holds, holdFromEvent(taskEvent))
+			holds = append(holds, holdFromEvent(taskEvent))
 		case agentcontract.TaskEventApprovalDecided:
 			decided := decode[decidedBody](taskEvent.Body)
-			update(ledger.Holds, decided.HoldID, func(held *Hold) { held.decide(decided.Decision) })
+			update(holds, decided.HoldID, func(held *Hold) { held.decide(decided.Decision) })
 		case agentcontract.TaskEventApprovalHoldSpent:
-			update(ledger.Holds, decode[spentBody](taskEvent.Body).HoldID, func(held *Hold) { held.spend() })
-		case agentcontract.TaskEventApprovalScopeGranted:
-			ledger.grantedScopes[strings.TrimSpace(decode[scopeGrantedBody](taskEvent.Body).Scope)] = true
+			update(holds, decode[spentBody](taskEvent.Body).HoldID, func(held *Hold) { held.spend() })
 		}
 	}
-	return ledger
-}
-
-func Holds(taskEvents []agentcontract.TaskEvent) []Hold {
-	return LedgerOf(taskEvents).Holds
-}
-
-func (ledger Ledger) GrantsScope(approvalScope string) bool {
-	trimmedScope := strings.TrimSpace(approvalScope)
-	return trimmedScope != "" && ledger.grantedScopes[trimmedScope]
+	return holds
 }
 
 func holdFromEvent(taskEvent agentcontract.TaskEvent) Hold {
@@ -167,15 +135,6 @@ func (held *Hold) spend() {
 	if held.State == StatePending || held.State == StateApproved {
 		held.State = StateSpent
 	}
-}
-
-func pendingHoldByID(taskEvents []agentcontract.TaskEvent, holdID string) (Hold, bool) {
-	for _, held := range Holds(taskEvents) {
-		if held.ID == holdID && held.State == StatePending {
-			return held, true
-		}
-	}
-	return Hold{}, false
 }
 
 func LatestHold(holds []Hold, state State) (Hold, bool) {

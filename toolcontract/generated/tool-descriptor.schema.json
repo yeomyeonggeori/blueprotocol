@@ -153,12 +153,6 @@
     "isOfferedOnRequest": {
       "type": "boolean"
     },
-    "approvalScope": {
-      "type": "string"
-    },
-    "approvalScopeSummary": {
-      "type": "string"
-    },
     "approvalInputFields": {
       "type": [
         "null",

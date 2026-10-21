@@ -99,7 +99,6 @@ const (
 	TaskEventApprovalDecided                       = "approval.decided"
 	TaskEventApprovalHoldOpened                    = "approval.hold_opened"
 	TaskEventApprovalHoldSpent                     = "approval.hold_spent"
-	TaskEventApprovalScopeGranted                  = "approval.scope_granted"
 	TaskEventApprovalUnheldCallCarriedOut          = "approval.unheld_call_carried_out"
 	TaskEventAgentApprovalWordingFailed            = "agent.approval_wording_failed"
 	TaskEventAgentApprovalConfirmationRequested    = "agent.approval_confirmation_requested"
