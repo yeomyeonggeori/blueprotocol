@@ -8,11 +8,9 @@ import (
 
 func TestDescriptorMetaSurvivesTheWireIntoTheSameDescriptor(t *testing.T) {
 	published := ToolDescriptor{
-		SideEffectClass:      ToolSideEffectDestructive,
-		RequiresApproval:     true,
-		ApprovalScope:        "calendar",
-		ApprovalScopeSummary: "every change to the team calendar",
-		ApprovalInputFields:  []string{"eventHint", "reason"},
+		SideEffectClass:     ToolSideEffectDestructive,
+		RequiresApproval:    true,
+		ApprovalInputFields: []string{"eventHint", "reason"},
 	}
 	encoded, errorValue := json.Marshal(DescriptorMeta(published))
 	if errorValue != nil {

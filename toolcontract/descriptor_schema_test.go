@@ -53,7 +53,6 @@ func TestTheDescriptorSchemaAcceptsADescriptor(t *testing.T) {
 		PolicyResource:   "tool:task_add",
 		SideEffectClass:  ToolSideEffectWorkspaceWrite,
 		RequiresApproval: true,
-		ApprovalScope:    "task",
 		Completion:       ToolCompletion{Mode: ToolCompletionObservation},
 		Idempotency:      ToolIdempotencySupported,
 		IdempotencyScope: "operation",

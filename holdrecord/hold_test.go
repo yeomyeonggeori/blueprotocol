@@ -155,47 +155,6 @@ func TestAHoldOpenedWithoutAToolNameAndWithoutInputAnswersNothing(t *testing.T) 
 	}
 }
 
-func scopedHold(t *testing.T) (*taskstate.TaskRunService, string, string) {
-	t.Helper()
-	taskRunService := taskstate.NewTaskRunService(taskstate.NewTaskEventService())
-	taskRunID := taskRunService.CreateTaskRun("person-1", "conversation-1", "send it").TaskRunID
-	holdID := Open(taskRunService, taskRunID, agentcontract.HeldCall{ToolName: "message_send", ApprovalScope: "message_send:team"}, nil).ID
-	return taskRunService, taskRunID, holdID
-}
-
-func scopeGrantCount(taskRunService *taskstate.TaskRunService, taskRunID string) int {
-	count := 0
-	for _, taskEvent := range taskRunService.ListTaskEvent(taskRunID) {
-		if taskEvent.Name == agentcontract.TaskEventApprovalScopeGranted {
-			count++
-		}
-	}
-	return count
-}
-
-func TestConfirmingAHoldGrantsItsScopeOnce(t *testing.T) {
-	taskRunService, taskRunID, holdID := scopedHold(t)
-
-	Decide(taskRunService, taskRunID, holdID, DecisionApprove, "chat_reply")
-	Decide(taskRunService, taskRunID, holdID, DecisionApprove, "chat_reply")
-
-	if grants := scopeGrantCount(taskRunService, taskRunID); grants != 1 {
-		t.Fatalf("expected one scope grant, got %d", grants)
-	}
-}
-
-func TestRejectingOrDeferringAHoldGrantsNoScope(t *testing.T) {
-	for _, decision := range []string{DecisionReject, DecisionDefer} {
-		taskRunService, taskRunID, holdID := scopedHold(t)
-
-		Decide(taskRunService, taskRunID, holdID, decision, "chat_reply")
-
-		if grants := scopeGrantCount(taskRunService, taskRunID); grants != 0 {
-			t.Fatalf("%s must not grant scope, got %d grants", decision, grants)
-		}
-	}
-}
-
 func TestADecisionSettlesTheHoldItNamesAndOnlyIt(t *testing.T) {
 	ledger, taskRunID, firstID := openedHold(t)
 	secondID := Open(ledger, taskRunID, agentcontract.HeldCall{ToolName: "event_delete", ToolInput: json.RawMessage(`{"eventID":"event-2"}`)}, nil).ID
@@ -232,17 +191,6 @@ func TestAHoldIsReadUnderTheToolsCurrentName(t *testing.T) {
 	}
 	if _, isSpent := SpendApprovedCall(ledger, taskRunID, "bash", json.RawMessage(`{"command":"pwd"}`)); !isSpent {
 		t.Fatal("the current name answers a hold recorded under the former one")
-	}
-}
-
-func TestAGrantedScopeIsReadBackFromTheLedger(t *testing.T) {
-	taskRunService, taskRunID, holdID := scopedHold(t)
-	Decide(taskRunService, taskRunID, holdID, DecisionApprove, "chat_reply")
-
-	ledger := LedgerOf(taskRunService.ListTaskEvent(taskRunID))
-
-	if !ledger.GrantsScope("message_send:team") || ledger.GrantsScope("message_send:other") || ledger.GrantsScope("") {
-		t.Fatalf("a scope is granted by an approved hold that carries it, got %+v", ledger)
 	}
 }
 

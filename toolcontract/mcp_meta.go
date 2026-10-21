@@ -10,8 +10,6 @@ const (
 	MetaKeyHostGated            = "toolcontract/hostGated"
 	MetaKeyOfferedOnRequest     = "toolcontract/offeredOnRequest"
 	MetaKeySideEffectClass      = "toolcontract/sideEffectClass"
-	MetaKeyApprovalScope        = "toolcontract/approvalScope"
-	MetaKeyApprovalScopeSummary = "toolcontract/approvalScopeSummary"
 	MetaKeyApprovalInputFields  = "toolcontract/approvalInputFields"
 	MetaKeyAttachmentDevicePath = "toolcontract/attachmentDevicePath"
 	MetaKeyDescriptor           = "toolcontract/descriptor"
@@ -20,14 +18,12 @@ const (
 
 func DescriptorMeta(descriptor ToolDescriptor) map[string]any {
 	return map[string]any{
-		MetaKeyRequiresApproval:     descriptor.RequiresApproval,
-		MetaKeyHostGated:            descriptor.IsHostGated,
-		MetaKeyOfferedOnRequest:     descriptor.IsOfferedOnRequest,
-		MetaKeySideEffectClass:      descriptor.SideEffectClass,
-		MetaKeyApprovalScope:        descriptor.ApprovalScope,
-		MetaKeyApprovalScopeSummary: descriptor.ApprovalScopeSummary,
-		MetaKeyApprovalInputFields:  append([]string{}, descriptor.ApprovalInputFields...),
-		MetaKeyDescriptor:           descriptor,
+		MetaKeyRequiresApproval:    descriptor.RequiresApproval,
+		MetaKeyHostGated:           descriptor.IsHostGated,
+		MetaKeyOfferedOnRequest:    descriptor.IsOfferedOnRequest,
+		MetaKeySideEffectClass:     descriptor.SideEffectClass,
+		MetaKeyApprovalInputFields: append([]string{}, descriptor.ApprovalInputFields...),
+		MetaKeyDescriptor:          descriptor,
 	}
 }
 
@@ -45,8 +41,6 @@ func ApplyDescriptorMeta(descriptor *ToolDescriptor, meta map[string]any) {
 		return
 	}
 	readMetaString(meta, MetaKeySideEffectClass, &descriptor.SideEffectClass)
-	readMetaString(meta, MetaKeyApprovalScope, &descriptor.ApprovalScope)
-	readMetaString(meta, MetaKeyApprovalScopeSummary, &descriptor.ApprovalScopeSummary)
 	if requiresApproval, isPresent := meta[MetaKeyRequiresApproval].(bool); isPresent {
 		descriptor.RequiresApproval = requiresApproval
 	}

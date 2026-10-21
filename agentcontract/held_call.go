@@ -16,7 +16,6 @@ type HeldCall struct {
 	ToolName          string          `json:"toolName"`
 	ToolInput         json.RawMessage `json:"toolInput,omitempty"`
 	ApprovedToolInput json.RawMessage `json:"approvedToolInput,omitempty"`
-	ApprovalScope     string          `json:"approvalScope,omitempty"`
 	Confirmation      string          `json:"confirmation"`
 	HarnessSession    HarnessSession  `json:"harnessSession"`
 }
