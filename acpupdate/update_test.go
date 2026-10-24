@@ -76,14 +76,14 @@ func TestAnEventThatIsNotAToolCallIsOnlyAThoughtForTheLedger(t *testing.T) {
 	if _, isToolCall := ToolCallForEvent(rawTurnEvent); isToolCall {
 		t.Fatal("a checkpoint was taken for a tool call")
 	}
-	if update := ForEvent(rawTurnEvent); update.AgentThoughtChunk == nil {
+	if update := ForEvent(rawTurnEvent, 0); update.AgentThoughtChunk == nil {
 		t.Fatalf("a checkpoint became %+v, want a thought chunk", update)
 	}
 }
 
 func TestALedgerRecordKeepsTheBodyExactlyAsTheLoopWroteItAcrossTheWire(t *testing.T) {
 	body := `{"unmet":[],"carriedOut":{"expected0":0.1}}`
-	update := ForEvent(taskstate.RawTurnEvent{Name: "completion.change_check", Body: body})
+	update := ForEvent(taskstate.RawTurnEvent{Name: "completion.change_check", Body: body}, 0)
 	sent, errorValue := json.Marshal(update.AgentThoughtChunk.Meta)
 	if errorValue != nil {
 		t.Fatal(errorValue)
@@ -100,5 +100,28 @@ func TestALedgerRecordKeepsTheBodyExactlyAsTheLoopWroteItAcrossTheWire(t *testin
 
 	if record.EventBody() != body {
 		t.Fatalf("a host that mirrors the ledger gets keys in the order the loop wrote them only from the text, got %q", record.EventBody())
+	}
+}
+
+func TestALedgerRecordKeepsItsPositionAcrossTheWire(t *testing.T) {
+	for _, rawTurnEvent := range []taskstate.RawTurnEvent{
+		{Name: "llm.call", Body: `{"model":"m"}`},
+		{Name: "tool.file_read.requested", Body: `{"observationID":"o1","input":{"path":"/a"}}`},
+	} {
+		update := ForEvent(rawTurnEvent, 7)
+		meta := update.AgentThoughtChunk
+		var sent []byte
+		if meta != nil {
+			sent, _ = json.Marshal(meta.Meta)
+		} else {
+			sent, _ = json.Marshal(update.ToolCall.Meta)
+		}
+		received := map[string]agentcontract.LedgerRecord{}
+		if errorValue := json.Unmarshal(sent, &received); errorValue != nil {
+			t.Fatal(errorValue)
+		}
+		if position := received[agentcontract.LedgerMetaKey].Position; position != 7 {
+			t.Fatalf("%s arrived at position %d, want 7", rawTurnEvent.Name, position)
+		}
 	}
 }
