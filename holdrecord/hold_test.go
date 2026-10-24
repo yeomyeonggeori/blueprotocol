@@ -218,3 +218,14 @@ func TestAnAnswerAHoldOffersKeepsItsLabelInTheLedger(t *testing.T) {
 		t.Fatalf("a choice that carries a label is an answer to a question, and one that starts later is not, got %+v", choices)
 	}
 }
+
+func TestAHandoffHoldNamesItsHandoffWhenReadBack(t *testing.T) {
+	taskRunService := taskstate.NewTaskRunService(taskstate.NewTaskEventService())
+	taskRunID := taskRunService.CreateTaskRun("person-1", "conversation-1", "sign in for me").TaskRunID
+	Open(taskRunService, taskRunID, agentcontract.HeldCall{ToolName: "browser_handoff", ToolInput: json.RawMessage(`{"reason":"sign in"}`), HandoffID: "handoff-1"}, nil)
+
+	holds := Holds(taskRunService.ListTaskEvent(taskRunID))
+	if len(holds) != 1 || holds[0].Call.HandoffID != "handoff-1" {
+		t.Fatalf("a hold reopened after a restart must still name its handoff, got %+v", holds)
+	}
+}

@@ -11,6 +11,7 @@ type ApprovalTarget struct {
 	Title      string   `json:"title,omitempty"`
 	StartsAt   string   `json:"startsAt,omitempty"`
 	Preview    string   `json:"preview,omitempty"`
+	HandoffID  string   `json:"handoffID,omitempty"`
 }
 
 func (target ApprovalTarget) IsResolved() bool {
