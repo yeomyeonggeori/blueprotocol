@@ -18,6 +18,7 @@ type HeldCall struct {
 	ApprovedToolInput json.RawMessage `json:"approvedToolInput,omitempty"`
 	Confirmation      string          `json:"confirmation"`
 	HarnessSession    HarnessSession  `json:"harnessSession"`
+	HandoffID         string          `json:"handoffID,omitempty"`
 }
 
 func (heldCall HeldCall) ApprovedInput() json.RawMessage {
