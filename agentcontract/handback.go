@@ -10,9 +10,10 @@ const (
 )
 
 type LedgerRecord struct {
-	Name string          `json:"name"`
-	Body json.RawMessage `json:"body,omitempty"`
-	Text string          `json:"text,omitempty"`
+	Name     string          `json:"name"`
+	Body     json.RawMessage `json:"body,omitempty"`
+	Text     string          `json:"text,omitempty"`
+	Position int             `json:"position,omitempty"`
 }
 
 func (record LedgerRecord) EventBody() string {
