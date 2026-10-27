@@ -41,7 +41,6 @@ type FailureReport struct {
 
 type RequestedChange struct {
 	Change       string `json:"change"`
-	Asked        string `json:"asked"`
 	IsCarriedOut bool   `json:"carriedOut"`
 }
 
@@ -444,7 +443,7 @@ func failureNoticeCompletedSummaryInstruction(report FailureReport) string {
 	return "completedSummary in the compact failure context lists concrete partial findings already gathered before the limit was reached. Your reply must state those concrete findings for the user first; only mention the time/step limit as the reason work stopped."
 }
 
-const failureNoticeRequestedChangesInstruction = "requestedChanges lists each change the request asked for, quoted in asked, and whether the recorded writes carried it out, as the runtime checked them against what each write actually set. completedSummary only says which calls succeeded, never whether they did what was asked. Say a requested change was made, applied or saved only when its carriedOut is true, and say plainly that each one whose carriedOut is false was not done. Do not judge the changes again, and do not report on changes requestedChanges does not list."
+const failureNoticeRequestedChangesInstruction = "requestedChanges lists each change the request asked for, as a sentence in change, and whether the recorded writes carried it out, as the runtime checked them against what each write actually set. completedSummary only says which calls succeeded, never whether they did what was asked. Say a requested change was made, applied or saved only when its carriedOut is true, and say plainly that each one whose carriedOut is false was not done. Do not judge the changes again, and do not report on changes requestedChanges does not list."
 
 func BuildFailureNoticePrompt(report FailureReport) string {
 	sections := []string{
