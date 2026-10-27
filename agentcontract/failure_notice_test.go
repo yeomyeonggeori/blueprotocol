@@ -416,7 +416,7 @@ func TestFailureNoticePromptCarriesWhichRequestedChangesWereCarriedOut(t *testin
 	report := FailureReport{
 		Phase:            "stall",
 		CompletedSummary: "task updated task-1 (task_update)",
-		RequestedChanges: []RequestedChange{{Change: "task updated", Asked: "그 업무 블루세이지 사업으로 넣어줘", IsCarriedOut: false}},
+		RequestedChanges: []RequestedChange{{Change: "그 업무를 블루세이지 사업으로 분류", IsCarriedOut: false}},
 	}
 
 	prompt := BuildFailureNoticePrompt(report)
@@ -424,7 +424,7 @@ func TestFailureNoticePromptCarriesWhichRequestedChangesWereCarriedOut(t *testin
 	if !strings.Contains(prompt, failureNoticeRequestedChangesInstruction) {
 		t.Fatalf("expected the requested-changes instruction, got %s", prompt)
 	}
-	if !strings.Contains(prompt, `"asked":"그 업무 블루세이지 사업으로 넣어줘","carriedOut":false`) {
+	if !strings.Contains(prompt, `"change":"그 업무를 블루세이지 사업으로 분류","carriedOut":false`) {
 		t.Fatalf("expected the unmet change in the compact context, got %s", prompt)
 	}
 	if strings.Contains(BuildFailureNoticePrompt(FailureReport{Phase: "stall"}), failureNoticeRequestedChangesInstruction) {
