@@ -9,8 +9,8 @@ import (
 func TestTheCompanyNamesTheZoneTheAgentReadsTheClockIn(t *testing.T) {
 	noon := time.Date(2026, 5, 12, 8, 32, 27, 0, time.UTC)
 
-	inSeoul := BuildTemporalContextDescription(noon, "Asia/Seoul")
-	inLosAngeles := BuildTemporalContextDescription(noon, "America/Los_Angeles")
+	inSeoul := BuildTemporalContextDescription(noon, "Asia/Seoul", "")
+	inLosAngeles := BuildTemporalContextDescription(noon, "America/Los_Angeles", "")
 
 	if !strings.Contains(inSeoul, "Now: 2026-05-12 (Tue) 17:32 +09:00 Asia/Seoul") {
 		t.Fatalf("expected the hour where the company is, got %s", inSeoul)
