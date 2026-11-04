@@ -12,6 +12,7 @@ type VisibleContext struct {
 	HasMoreBefore              bool
 	HistoryCursor              string
 	ResponseLanguage           string
+	RequesterTimeZone          string
 }
 
 type VisibleContextMessage struct {
