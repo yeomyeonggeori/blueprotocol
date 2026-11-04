@@ -23,6 +23,7 @@ func TestAToolRequestBecomesAToolCallTitledByWhatItWasPointedAt(t *testing.T) {
 		{"a field that is not text is ignored", `{"observationID":"o1","input":{"path":3,"query":"q"}}`, "file_read(q)"},
 		{"newlines do not break the title", `{"observationID":"o1","input":{"command":"a\nb"}}`, "file_read(a b)"},
 		{"a long subject is cut", `{"observationID":"o1","input":{"path":"` + strings.Repeat("x", 60) + `"}}`, "file_read(" + strings.Repeat("x", 48) + "…)"},
+		{"a long Korean subject is cut between characters", `{"observationID":"o1","input":{"title":"a` + strings.Repeat("가", 60) + `"}}`, "file_read(a" + strings.Repeat("가", 47) + "…)"},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			update, isToolCall := ToolCallForEvent(taskstate.RawTurnEvent{Name: "tool.file_read.requested", Body: testCase.body})
