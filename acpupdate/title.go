@@ -37,8 +37,9 @@ func subjectText(value any) string {
 		return ""
 	}
 	text = strings.TrimSpace(strings.ReplaceAll(text, "\n", " "))
-	if len(text) <= subjectLimit {
+	characters := []rune(text)
+	if len(characters) <= subjectLimit {
 		return text
 	}
-	return strings.TrimSpace(text[:subjectLimit]) + "…"
+	return strings.TrimSpace(string(characters[:subjectLimit])) + "…"
 }
