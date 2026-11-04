@@ -16,7 +16,7 @@ func WorkQuestion(about string, agentName string) model.DecisionQuestion {
 			string(WorkEasy):       "a short piece of work: a lookup, one record or one change, including bringing a kept record in line with news that it is done or changed",
 			string(WorkNormal):     "work in several steps: research, several records, or a document or file to produce",
 			string(WorkHard):       "long, wide or verification-heavy work",
-			string(WorkImpossible): "work that cannot be done: physically impossible, nonsensical, or plainly improper on its face. Never for a permission concern or a tool " + agentName + " might lack, which the work itself finds out",
+			string(WorkImpossible): "work that cannot be done: physically impossible or nonsensical on its face. Never for a permission concern, whether the work is proper, or a tool " + agentName + " might lack, which the work itself finds out",
 			string(WorkUnclear):    "work none of which can start until the sender answers one question: the requested goal, target or outcome is still ambiguous after the visible context, and only the sender can resolve it. A missing detail the work can look up, infer from context or fill with the plain default is not unclear, and neither is an approval or a request to retry what the context shows was just tried",
 		},
 	}.Question()
