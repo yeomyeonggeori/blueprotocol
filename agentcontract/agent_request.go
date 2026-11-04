@@ -22,6 +22,7 @@ type AgentRequest struct {
 	ConversationID             string
 	ConversationType           string
 	Prompt                     string
+	BriefedPrompt              string
 	InputParts                 []AgentPart
 	ResponseLanguage           string
 	VisibleContext             VisibleContext
@@ -104,6 +105,7 @@ type AgentTurnRequest struct {
 	ConversationID               string
 	ConversationType             string
 	Prompt                       string
+	BriefedPrompt                string
 	InputParts                   []AgentPart
 	ResponseLanguage             string
 	VisibleContext               VisibleContext
