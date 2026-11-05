@@ -41,8 +41,8 @@ func TestAToolRequestCarriesItsCallIDStatusAndLedgerRecord(t *testing.T) {
 	update, _ := ToolCallForEvent(taskstate.RawTurnEvent{Name: "tool.file_read.requested", Body: `{"observationID":"o1","input":{"path":"/a"}}`})
 
 	toolCall := update.ToolCall
-	if toolCall.ToolCallId != "o1" || toolCall.Status != acp.ToolCallStatusPending {
-		t.Fatalf("tool call = %+v, want id o1 pending", toolCall)
+	if toolCall.ToolCallId != "o1" || toolCall.Status != acp.ToolCallStatusInProgress {
+		t.Fatalf("tool call = %+v, want id o1 in progress, since the loop records a request as it starts the call", toolCall)
 	}
 	record, isRecorded := toolCall.Meta[agentcontract.LedgerMetaKey].(agentcontract.LedgerRecord)
 	if !isRecorded || record.Name != "tool.file_read.requested" {

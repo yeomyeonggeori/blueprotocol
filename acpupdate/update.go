@@ -28,7 +28,7 @@ func toolCallFor(rawTurnEvent taskstate.RawTurnEvent, meta map[string]any) (acp.
 		return acp.SessionUpdate{ToolCall: &acp.SessionUpdateToolCall{
 			ToolCallId: acp.ToolCallId(toolCallIDOfEvent(rawTurnEvent.Body)),
 			Title:      ToolCallTitle(toolName, rawTurnEvent.Body),
-			Status:     acp.ToolCallStatusPending,
+			Status:     acp.ToolCallStatusInProgress,
 			RawInput:   rawInputOfEvent(rawTurnEvent.Body),
 			Meta:       meta,
 		}}, true
