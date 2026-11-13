@@ -9,13 +9,14 @@ import (
 )
 
 type QuestionFacts struct {
-	ResponseLanguage string
-	OriginalRequest  string
-	ModelDraft       string
-	Tool             toolcontract.ToolDefinition
-	Input            json.RawMessage
-	Target           agentcontract.ApprovalTarget
-	Choices          []Choice
+	ResponseLanguage  string
+	RequesterTimeZone string
+	OriginalRequest   string
+	ModelDraft        string
+	Tool              toolcontract.ToolDefinition
+	Input             json.RawMessage
+	Target            agentcontract.ApprovalTarget
+	Choices           []Choice
 }
 
 type QuestionWorder interface {
