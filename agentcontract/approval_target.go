@@ -9,6 +9,7 @@ type ApprovalTarget struct {
 	ID         string   `json:"id,omitempty"`
 	IDs        []string `json:"ids,omitempty"`
 	Title      string   `json:"title,omitempty"`
+	Address    string   `json:"address,omitempty"`
 	StartsAt   string   `json:"startsAt,omitempty"`
 	Preview    string   `json:"preview,omitempty"`
 	HandoffID  string   `json:"handoffID,omitempty"`

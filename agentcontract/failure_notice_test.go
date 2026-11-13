@@ -443,3 +443,43 @@ func TestEveryFailureNoticePromptSaysNothingRunsAfterIt(t *testing.T) {
 		t.Fatal("the intake notice prompt does not say that nothing runs after it")
 	}
 }
+
+func TestEveryFailureNoticePromptNamesThingsTheWayThePersonKnowsThem(t *testing.T) {
+	report := FailureReport{Phase: "stall", StopReason: "tool failed"}
+	prompts := map[string]string{
+		"the failure notice":             BuildFailureNoticePrompt(report),
+		"the intake notice":              BuildIntakeNoticePrompt(IntakeClassificationUnsupported, report),
+		"the failure notice review":      buildFailureNoticeReviewPrompt(report, "작업을 멈췄어요."),
+		"the failure notice compression": BuildFailureNoticeCompressionPrompt(report, "작업을 멈췄어요.", 600),
+	}
+	for writer, prompt := range prompts {
+		if !strings.Contains(prompt, PeopleReadWhatTheyRecognize) {
+			t.Errorf("%s is not told to name things the way the person knows them", writer)
+		}
+	}
+}
+
+func TestAFailureNoticePromptCarriesNoInternalIdentifier(t *testing.T) {
+	report := FailureReport{
+		Phase:             "limit",
+		StopReason:        "max_elapsed",
+		DiagnosticEventID: "task-123:limit",
+		IntakeFacts:       &IntakeFailureFacts{PriorTaskID: "task-456", PriorTaskStatus: "failed"},
+	}
+	prompts := map[string]string{
+		"the failure notice":             BuildFailureNoticePrompt(report),
+		"the intake notice":              BuildIntakeNoticePrompt(IntakeClassificationUnsupported, report),
+		"the failure notice review":      buildFailureNoticeReviewPrompt(report, "작업을 멈췄어요."),
+		"the failure notice compression": BuildFailureNoticeCompressionPrompt(report, "작업을 멈췄어요.", 600),
+	}
+	for writer, prompt := range prompts {
+		for _, identifier := range []string{"task-123", "task-456"} {
+			if strings.Contains(prompt, identifier) {
+				t.Errorf("%s hands the model the internal identifier %q: %s", writer, identifier, prompt)
+			}
+		}
+	}
+	if report.DiagnosticEventID != "task-123:limit" || report.IntakeFacts.PriorTaskID != "task-456" {
+		t.Fatalf("projecting the report for a prompt changed the report itself: %+v %+v", report, report.IntakeFacts)
+	}
+}

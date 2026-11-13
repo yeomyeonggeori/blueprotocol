@@ -162,6 +162,15 @@
         "type": "string"
       }
     },
+    "approvalQuotedFields": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
     "completion": {
       "type": "object",
       "properties": {

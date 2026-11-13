@@ -19,6 +19,8 @@ const (
 
 const NothingRunsAfterTheLastWord = "Nothing runs after a task's last message: the work continues only if the person replies or asks again. Never say a retry or recovery is underway, and never promise to try again, check, follow up or report back on your own."
 
+const PeopleReadWhatTheyRecognize = "Whatever a person will read names things the way that person knows them: a record by its title, its date and time, or whose it is; a person by name; a failure by what went wrong and what they can do about it. A value only the system reads never appears, not even in parentheses: a record or task identifier, a tool, operation or field name, an error code or status word, JSON. The one exception is a value the person asked for by name."
+
 type FailureReport struct {
 	Phase               string              `json:"phase,omitempty"`
 	StepName            string              `json:"stepName,omitempty"`
@@ -186,9 +188,10 @@ func BuildIntakeNoticePrompt(classification IntakeClassification, report Failure
 		intakeNoticeIntent(classification),
 		"Use only the compact intake context below. Do not infer from earlier conversation history.",
 		NothingRunsAfterTheLastWord,
+		PeopleReadWhatTheyRecognize,
 		"Write one or two natural sentences.",
 		"Do not expose provider errors, internal service URLs, internal filesystem paths, or tokens.",
-		"Compact intake context:\n" + marshalEventBody(report),
+		"Compact intake context:\n" + promptFailureContext(report),
 	}
 	return strings.Join(sections, "\n\n")
 }
@@ -347,15 +350,7 @@ func (generator FailureNoticeGenerator) reviewFailureNotice(ctx context.Context,
 	if trimmedCandidate == "" {
 		return "", "", false
 	}
-	prompt := strings.Join([]string{
-		"Review and, when needed, rewrite this user-facing failure notice.",
-		ResponseLanguageInstruction(report.ResponseLanguage),
-		"Return only the final notice. Ground it in the compact failure context.",
-		"Keep it concise and natural. Do not expose provider errors, stack traces, internal service URLs, internal filesystem paths, tokens, serialized status, or false artifact delivery claims.",
-		"Compact failure context:\n" + marshalEventBody(report),
-		"Candidate notice:\n" + trimmedCandidate,
-	}, "\n\n")
-	message, errorValue := generator.generateFailureNoticeReview(ctx, source, prompt)
+	message, errorValue := generator.generateFailureNoticeReview(ctx, source, buildFailureNoticeReviewPrompt(report, trimmedCandidate))
 	if errorValue != nil {
 		return "", "", false
 	}
@@ -364,6 +359,18 @@ func (generator FailureNoticeGenerator) reviewFailureNotice(ctx context.Context,
 		return "", "", false
 	}
 	return message, source + "_review", true
+}
+
+func buildFailureNoticeReviewPrompt(report FailureReport, candidate string) string {
+	return strings.Join([]string{
+		"Review and, when needed, rewrite this user-facing failure notice.",
+		ResponseLanguageInstruction(report.ResponseLanguage),
+		"Return only the final notice. Ground it in the compact failure context.",
+		"Keep it concise and natural. Do not expose provider errors, stack traces, internal service URLs, internal filesystem paths, tokens, serialized status, or false artifact delivery claims.",
+		PeopleReadWhatTheyRecognize,
+		"Compact failure context:\n" + promptFailureContext(report),
+		"Candidate notice:\n" + candidate,
+	}, "\n\n")
 }
 
 func (generator FailureNoticeGenerator) generateFailureNoticeReview(ctx context.Context, source string, prompt string) (string, error) {
@@ -462,6 +469,7 @@ func BuildFailureNoticePrompt(report FailureReport) string {
 	}
 	sections = append(sections,
 		NothingRunsAfterTheLastWord,
+		PeopleReadWhatTheyRecognize,
 		"Write one or two natural sentences.",
 		"Keep the notice under 600 Korean characters or an equivalent short length.",
 		"Preserve the safe meaning of the failure, but do not expose provider errors, stack traces, internal service URLs, internal filesystem paths, tokens, or serialized reply status.",
@@ -479,7 +487,7 @@ func BuildFailureNoticePrompt(report FailureReport) string {
 	if report.ArtifactRequired && len(report.AttachmentFilenames) == 0 && len(report.CarriedFilenames) == 0 {
 		sections = append(sections, "The requested file artifact was not delivered. State that plainly, summarize the concrete failed operation and safe failure reason, and give the next practical check. Do not offer chat text as a substitute.")
 	}
-	sections = append(sections, "Compact failure context:\n"+marshalEventBody(report))
+	sections = append(sections, "Compact failure context:\n"+promptFailureContext(report))
 	return strings.Join(sections, "\n\n")
 }
 
@@ -501,9 +509,10 @@ func BuildFailureNoticeCompressionPrompt(report FailureReport, reply string, max
 		"You are compressing a user-facing failure notice for a chat message.",
 		ResponseLanguageInstruction(report.ResponseLanguage),
 		"Keep the same meaning and omit internal diagnostics.",
+		PeopleReadWhatTheyRecognize,
 		"Write one or two natural sentences.",
 		"Maximum characters: " + strconv.Itoa(maximumCharacters),
-		"Compact failure context:\n" + marshalEventBody(report),
+		"Compact failure context:\n" + promptFailureContext(report),
 		"Notice to compress:\n" + strings.TrimSpace(reply),
 	}, "\n\n")
 }
@@ -564,6 +573,16 @@ func truncateText(value string, limit int) string {
 		return value
 	}
 	return value[:limit] + "..."
+}
+
+func promptFailureContext(report FailureReport) string {
+	report.DiagnosticEventID = ""
+	if report.IntakeFacts != nil {
+		intakeFacts := *report.IntakeFacts
+		intakeFacts.PriorTaskID = ""
+		report.IntakeFacts = &intakeFacts
+	}
+	return marshalEventBody(report)
 }
 
 func marshalEventBody(value any) string {
