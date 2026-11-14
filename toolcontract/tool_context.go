@@ -10,21 +10,8 @@ type toolContextKey string
 const taskRunIDContextKey toolContextKey = "taskRunID"
 const observationIDContextKey toolContextKey = "observationID"
 const responseLanguageContextKey toolContextKey = "responseLanguage"
-const userFacingMessageContextKey toolContextKey = "userFacingMessage"
 const delegatedTurnContextKey toolContextKey = "delegatedTurn"
 const holdIDContextKey toolContextKey = "holdID"
-
-func WithUserFacingMessage(ctx context.Context, userFacingMessage string) context.Context {
-	if strings.TrimSpace(userFacingMessage) == "" {
-		return ctx
-	}
-	return context.WithValue(ctx, userFacingMessageContextKey, userFacingMessage)
-}
-
-func UserFacingMessageFromContext(ctx context.Context) string {
-	userFacingMessage, _ := ctx.Value(userFacingMessageContextKey).(string)
-	return userFacingMessage
-}
 
 func WithTaskRunID(ctx context.Context, taskRunID string) context.Context {
 	if taskRunID == "" {
