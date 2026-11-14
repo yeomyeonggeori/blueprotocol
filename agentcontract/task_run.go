@@ -18,6 +18,10 @@ const (
 	TaskStatusCancelled        TaskStatus = "cancelled"
 )
 
+func (status TaskStatus) IsAwaitingAnAnswer() bool {
+	return status == TaskStatusWaitingApproval || status == TaskStatusWaitingUserInput
+}
+
 const TaskInterruptReasonPlannedShutdown = "planned_shutdown"
 const TaskInterruptReasonRuntimeRestart = "runtime restarted before task completed"
 
