@@ -121,6 +121,7 @@ type AgentTurnRequest struct {
 	AgentIdentity                AgentIdentity
 	ActivePaths                  []string
 	HostInstruction              string
+	Voice                        string
 	InstructionPrompt            string
 	InstructionSources           []InstructionSource
 	SkillDecisions               []SkillSelectionDecision
