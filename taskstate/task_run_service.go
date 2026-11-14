@@ -663,12 +663,12 @@ func (taskRunService *TaskRunService) CloseOpenToolRequests(taskRunID string, re
 func (taskRunService *TaskRunService) closeOpenToolRequests(taskRunID string, taskAttemptID string, reason string) {
 	openRequests := openToolRequests(taskRunService.taskEventService.ListTaskEvent(taskRunID))
 	for _, openRequest := range openRequests {
-		taskRunService.taskEventService.AppendTaskEvent(taskRunID, agentcontract.ToolTaskEventName(openRequest.ToolName, agentcontract.ToolTaskEventCancelledSuffix), marshalTaskRunServiceEventBody(map[string]string{
-			"observationID":  openRequest.ObservationID,
-			"toolName":       openRequest.ToolName,
-			"taskAttemptID":  taskAttemptID,
-			"reason":         reason,
-			"terminalStatus": "cancelled",
+		taskRunService.taskEventService.AppendTaskEvent(taskRunID, agentcontract.ToolTaskEventName(openRequest.ToolName, agentcontract.ToolTaskEventCancelledSuffix), marshalTaskRunServiceEventBody(agentcontract.ToolCallCancelled{
+			ObservationID:  openRequest.ObservationID,
+			ToolName:       openRequest.ToolName,
+			TaskAttemptID:  taskAttemptID,
+			Reason:         reason,
+			TerminalStatus: "cancelled",
 		}))
 	}
 }
@@ -1061,33 +1061,22 @@ type openToolRequest struct {
 	ToolName      string
 }
 
-type toolEventBody struct {
-	ObservationID string `json:"observationID"`
-	ToolName      string `json:"toolName"`
-}
-
 func openToolRequests(taskEvents []agentcontract.TaskEvent) []openToolRequest {
 	requests := []openToolRequest{}
 	closedObservationIDs := map[string]bool{}
 	for _, taskEvent := range taskEvents {
-		toolName, isToolEvent := agentcontract.ToolTaskEventToolName(taskEvent.Name, ".requested")
+		toolName, isToolEvent := agentcontract.ToolTaskEventToolName(taskEvent.Name, agentcontract.ToolTaskEventRequestedSuffix)
 		if isToolEvent {
-			body := parseToolEventBody(taskEvent.Body)
-			requests = append(requests, openToolRequest{ObservationID: firstNonEmptyTaskRunString(body.ObservationID, taskEvent.TaskEventID), ToolName: firstNonEmptyTaskRunString(body.ToolName, toolName)})
+			requested := agentcontract.ToolCallRecordOf[agentcontract.ToolCallRequested](taskEvent.Body)
+			requests = append(requests, openToolRequest{ObservationID: firstNonEmptyTaskRunString(requested.ObservationID, taskEvent.TaskEventID), ToolName: firstNonEmptyTaskRunString(requested.ToolName, toolName)})
 			continue
 		}
-		if _, isResult := agentcontract.ToolTaskEventToolName(taskEvent.Name, ".result"); isResult {
-			body := parseToolEventBody(taskEvent.Body)
-			if body.ObservationID != "" {
-				closedObservationIDs[body.ObservationID] = true
-			}
+		if _, isResult := agentcontract.ToolTaskEventToolName(taskEvent.Name, agentcontract.ToolTaskEventResultSuffix); isResult {
+			closedObservationIDs[agentcontract.ToolCallRecordOf[agentcontract.ToolCallResult](taskEvent.Body).ObservationID] = true
 			continue
 		}
-		if _, isCancelled := agentcontract.ToolTaskEventToolName(taskEvent.Name, ".cancelled"); isCancelled {
-			body := parseToolEventBody(taskEvent.Body)
-			if body.ObservationID != "" {
-				closedObservationIDs[body.ObservationID] = true
-			}
+		if _, isCancelled := agentcontract.ToolTaskEventToolName(taskEvent.Name, agentcontract.ToolTaskEventCancelledSuffix); isCancelled {
+			closedObservationIDs[agentcontract.ToolCallRecordOf[agentcontract.ToolCallCancelled](taskEvent.Body).ObservationID] = true
 		}
 	}
 	openRequests := []openToolRequest{}
@@ -1097,12 +1086,6 @@ func openToolRequests(taskEvents []agentcontract.TaskEvent) []openToolRequest {
 		}
 	}
 	return openRequests
-}
-
-func parseToolEventBody(body string) toolEventBody {
-	var parsedBody toolEventBody
-	_ = json.Unmarshal([]byte(body), &parsedBody)
-	return parsedBody
 }
 
 func marshalTaskRunServiceEventBody(value any) string {

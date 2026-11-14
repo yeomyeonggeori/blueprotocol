@@ -25,21 +25,23 @@ func ToolCallForEvent(rawTurnEvent taskstate.RawTurnEvent) (acp.SessionUpdate, b
 
 func toolCallFor(rawTurnEvent taskstate.RawTurnEvent, meta map[string]any) (acp.SessionUpdate, bool) {
 	if toolName, isRequest := agentcontract.ToolTaskEventToolName(rawTurnEvent.Name, agentcontract.ToolTaskEventRequestedSuffix); isRequest {
+		requested := agentcontract.ToolCallRecordOf[agentcontract.ToolCallRequested](rawTurnEvent.Body)
 		return acp.SessionUpdate{ToolCall: &acp.SessionUpdateToolCall{
-			ToolCallId: acp.ToolCallId(toolCallIDOfEvent(rawTurnEvent.Body)),
-			Title:      ToolCallTitle(toolName, rawTurnEvent.Body),
+			ToolCallId: acp.ToolCallId(requested.ObservationID),
+			Title:      ToolCallTitle(toolName, requested.Input),
 			Status:     acp.ToolCallStatusInProgress,
-			RawInput:   rawInputOfEvent(rawTurnEvent.Body),
+			RawInput:   rawInputOf(requested.Input),
 			Meta:       meta,
 		}}, true
 	}
 	if _, isResult := agentcontract.ToolTaskEventToolName(rawTurnEvent.Name, agentcontract.ToolTaskEventResultSuffix); isResult {
+		result := agentcontract.ToolCallRecordOf[agentcontract.ToolCallResult](rawTurnEvent.Body)
 		status := acp.ToolCallStatusCompleted
-		if isFailureEvent(rawTurnEvent.Body) {
+		if !result.Succeeded() {
 			status = acp.ToolCallStatusFailed
 		}
 		return acp.SessionUpdate{ToolCallUpdate: &acp.SessionToolCallUpdate{
-			ToolCallId: acp.ToolCallId(toolCallIDOfEvent(rawTurnEvent.Body)),
+			ToolCallId: acp.ToolCallId(result.ObservationID),
 			Status:     &status,
 			RawOutput:  json.RawMessage(rawTurnEvent.Body),
 			Meta:       meta,
@@ -63,27 +65,9 @@ func ledgerMeta(record agentcontract.LedgerRecord) map[string]any {
 	return map[string]any{agentcontract.LedgerMetaKey: record}
 }
 
-func toolCallIDOfEvent(body string) string {
-	decoded := struct {
-		ObservationID string `json:"observationID"`
-	}{}
-	json.Unmarshal([]byte(body), &decoded)
-	return decoded.ObservationID
-}
-
-func rawInputOfEvent(body string) any {
-	decoded := struct {
-		Input json.RawMessage `json:"input"`
-	}{}
-	if json.Unmarshal([]byte(body), &decoded) != nil || len(decoded.Input) == 0 {
+func rawInputOf(input json.RawMessage) any {
+	if len(input) == 0 {
 		return nil
 	}
-	return decoded.Input
-}
-
-func isFailureEvent(body string) bool {
-	decoded := struct {
-		Failure *json.RawMessage `json:"failure"`
-	}{}
-	return json.Unmarshal([]byte(body), &decoded) == nil && decoded.Failure != nil
+	return input
 }
