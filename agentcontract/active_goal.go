@@ -90,6 +90,10 @@ type PriorTaskAttempt struct {
 	Effects          []toolcontract.ResourceEffect `json:"effects,omitempty"`
 }
 
+func PriorTaskAttemptOf(toolName string, result ToolCallResult) PriorTaskAttempt {
+	return PriorTaskAttempt{ObservationID: result.ObservationID, Tool: toolName, ToolInput: result.ToolInput, Failure: result.Failure, Effects: result.Effects}
+}
+
 func OutcomeContractHasRequirements(contract OutcomeContract) bool {
 	artifactRequirement := strings.TrimSpace(contract.ArtifactRequirement)
 	return len(contract.ExpectedResults) > 0 ||

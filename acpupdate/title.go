@@ -9,22 +9,20 @@ const subjectLimit = 48
 
 var subjectFields = []string{"path", "filePath", "query", "command", "title", "name", "url"}
 
-func ToolCallTitle(toolName string, body string) string {
-	if subject := subjectOfEvent(body); subject != "" {
+func ToolCallTitle(toolName string, input json.RawMessage) string {
+	if subject := subjectOfInput(input); subject != "" {
 		return toolName + "(" + subject + ")"
 	}
 	return toolName
 }
 
-func subjectOfEvent(body string) string {
-	decoded := struct {
-		Input map[string]any `json:"input"`
-	}{}
-	if json.Unmarshal([]byte(body), &decoded) != nil {
+func subjectOfInput(input json.RawMessage) string {
+	decoded := map[string]any{}
+	if json.Unmarshal(input, &decoded) != nil {
 		return ""
 	}
 	for _, fieldName := range subjectFields {
-		if subject := subjectText(decoded.Input[fieldName]); subject != "" {
+		if subject := subjectText(decoded[fieldName]); subject != "" {
 			return subject
 		}
 	}
