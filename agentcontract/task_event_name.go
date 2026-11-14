@@ -129,6 +129,7 @@ const (
 	TaskEventConnectorReplySuppressed              = "connector.reply.suppressed"
 	TaskEventDelegateFinished                      = "delegate.finished"
 	TaskEventDelegateLaunched                      = "delegate.launched"
+	TaskEventHarnessSessionOpened                  = "harness.session_opened"
 	TaskEventHarnessToolPermitted                  = "harness.tool_permitted"
 	TaskEventHarnessToolRefused                    = "harness.tool_refused"
 	TaskEventLLMCall                               = "llm.call"
