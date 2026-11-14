@@ -3,6 +3,7 @@ package agentcontract
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/yeomyeonggeori/blueprotocol/toolcontract"
@@ -177,4 +178,11 @@ type AgentCheckpoint struct {
 	ToolName    string
 	Attachments []toolcontract.FileAttachment
 	Durable     bool
+}
+
+func (request AgentTurnRequest) WorkingDirectoryPath() string {
+	if defaultPath := strings.TrimSpace(request.WorkspaceDefaultPath); defaultPath != "" {
+		return defaultPath
+	}
+	return request.WorkspaceRootPath
 }
