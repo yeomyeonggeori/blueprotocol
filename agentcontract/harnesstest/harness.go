@@ -30,11 +30,7 @@ func (harness *Harness) RunTurn(_ context.Context, request agentcontract.AgentTu
 	harness.runTurnCallCount++
 	harness.lastTurnRequest = request
 	turnResult := harness.TurnResult
-	settledTaskRun, errorValue := harness.settleTaskRun(request, harness.TurnStatus, turnResult.FinishMessage)
-	if errorValue != nil {
-		return turnResult, errorValue
-	}
-	turnResult.TaskRun = settledTaskRun
+	turnResult.TaskRun = harness.verdict(request, harness.TurnStatus, turnResult.FinishMessage)
 	return turnResult, nil
 }
 
@@ -72,6 +68,16 @@ func (harness *Harness) LastTurnRequest() agentcontract.AgentTurnRequest {
 
 func (harness *Harness) RunTurnCallCount() int {
 	return harness.runTurnCallCount
+}
+
+func (harness *Harness) verdict(request agentcontract.AgentTurnRequest, status agentcontract.TaskStatus, message string) agentcontract.TaskRun {
+	verdict := agentcontract.TaskRun{TaskRunID: harness.taskRunForRequest(request).TaskRunID, Status: status}
+	if status == agentcontract.TaskStatusCompleted {
+		verdict.Result = message
+		return verdict
+	}
+	verdict.FailureReason = message
+	return verdict
 }
 
 func (harness *Harness) settleTaskRun(request agentcontract.AgentTurnRequest, status agentcontract.TaskStatus, message string) (agentcontract.TaskRun, error) {
