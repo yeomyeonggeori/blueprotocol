@@ -11,7 +11,7 @@ const (
 	MetaKeyOfferedOnRequest     = "toolcontract/offeredOnRequest"
 	MetaKeySideEffectClass      = "toolcontract/sideEffectClass"
 	MetaKeyApprovalInputFields  = "toolcontract/approvalInputFields"
-	MetaKeyApprovalQuotedFields = "toolcontract/approvalQuotedFields"
+	MetaKeyApprovalQuotedField  = "toolcontract/approvalQuotedField"
 	MetaKeyAttachmentDevicePath = "toolcontract/attachmentDevicePath"
 	MetaKeyDescriptor           = "toolcontract/descriptor"
 	MetaKeyResult               = "toolcontract/result"
@@ -19,13 +19,13 @@ const (
 
 func DescriptorMeta(descriptor ToolDescriptor) map[string]any {
 	return map[string]any{
-		MetaKeyRequiresApproval:     descriptor.RequiresApproval,
-		MetaKeyHostGated:            descriptor.IsHostGated,
-		MetaKeyOfferedOnRequest:     descriptor.IsOfferedOnRequest,
-		MetaKeySideEffectClass:      descriptor.SideEffectClass,
-		MetaKeyApprovalInputFields:  append([]string{}, descriptor.ApprovalInputFields...),
-		MetaKeyApprovalQuotedFields: append([]string{}, descriptor.ApprovalQuotedFields...),
-		MetaKeyDescriptor:           descriptor,
+		MetaKeyRequiresApproval:    descriptor.RequiresApproval,
+		MetaKeyHostGated:           descriptor.IsHostGated,
+		MetaKeyOfferedOnRequest:    descriptor.IsOfferedOnRequest,
+		MetaKeySideEffectClass:     descriptor.SideEffectClass,
+		MetaKeyApprovalInputFields: append([]string{}, descriptor.ApprovalInputFields...),
+		MetaKeyApprovalQuotedField: descriptor.ApprovalQuotedField,
+		MetaKeyDescriptor:          descriptor,
 	}
 }
 
@@ -47,7 +47,7 @@ func ApplyDescriptorMeta(descriptor *ToolDescriptor, meta map[string]any) {
 		descriptor.RequiresApproval = requiresApproval
 	}
 	descriptor.ApprovalInputFields = append(descriptor.ApprovalInputFields, metaStrings(meta, MetaKeyApprovalInputFields)...)
-	descriptor.ApprovalQuotedFields = append(descriptor.ApprovalQuotedFields, metaStrings(meta, MetaKeyApprovalQuotedFields)...)
+	readMetaString(meta, MetaKeyApprovalQuotedField, &descriptor.ApprovalQuotedField)
 }
 
 func descriptorOfMeta(meta map[string]any) (ToolDescriptor, bool) {
