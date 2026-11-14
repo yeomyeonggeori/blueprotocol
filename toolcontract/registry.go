@@ -41,7 +41,7 @@ type ToolDescriptor struct {
 	IsHostGated          bool                `json:"isHostGated,omitempty"`
 	IsOfferedOnRequest   bool                `json:"isOfferedOnRequest,omitempty"`
 	ApprovalInputFields  []string            `json:"approvalInputFields,omitempty"`
-	ApprovalQuotedFields []string            `json:"approvalQuotedFields,omitempty"`
+	ApprovalQuotedField  string              `json:"approvalQuotedField,omitempty"`
 	Completion           ToolCompletion      `json:"completion,omitempty"`
 	Idempotency          string              `json:"idempotency,omitempty"`
 	IdempotencyScope     string              `json:"idempotencyScope,omitempty"`
