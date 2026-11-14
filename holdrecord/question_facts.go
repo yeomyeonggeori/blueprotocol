@@ -11,6 +11,7 @@ import (
 type QuestionFacts struct {
 	ResponseLanguage  string
 	RequesterTimeZone string
+	Voice             string
 	Tool              toolcontract.ToolDefinition
 	Input             json.RawMessage
 	Target            agentcontract.ApprovalTarget
