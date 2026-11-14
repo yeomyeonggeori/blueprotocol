@@ -153,6 +153,9 @@
     "isOfferedOnRequest": {
       "type": "boolean"
     },
+    "isBroughtByEveryHarness": {
+      "type": "boolean"
+    },
     "approvalInputFields": {
       "type": [
         "null",
