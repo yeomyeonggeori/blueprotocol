@@ -132,11 +132,15 @@ func ToolDescriptorRequiresInputIntentSchema(toolDescriptor ToolDescriptor) bool
 	if toolDescriptor.Visibility != ToolVisibilityModel {
 		return false
 	}
-	switch toolDescriptor.SideEffectClass {
+	return !isReadOnlySideEffectClass(toolDescriptor.SideEffectClass)
+}
+
+func isReadOnlySideEffectClass(sideEffectClass string) bool {
+	switch sideEffectClass {
 	case ToolSideEffectNone, ToolSideEffectRead, ToolSideEffectComputation:
-		return false
-	default:
 		return true
+	default:
+		return false
 	}
 }
 
@@ -793,7 +797,7 @@ func (toolSet *ToolSet) invokeWithinDeclaredBudget(ctx context.Context, boundToo
 	defer releaseBudget()
 	result, errorValue := callToolHandler(budgetContext, boundTool, toolInvocation)
 	if budgetDeadlineWon(ctx, budgetContext) {
-		return toolBudgetExpiredFailure(boundTool.Definition.Name, timeoutMS), nil
+		return toolBudgetExpiredFailure(boundTool.Definition, timeoutMS), nil
 	}
 	return result, errorValue
 }
@@ -826,11 +830,27 @@ func budgetDeadlineWon(callerContext context.Context, budgetContext context.Cont
 	return errors.Is(budgetContext.Err(), context.DeadlineExceeded) && !errors.Is(callerContext.Err(), context.Canceled)
 }
 
-func toolBudgetExpiredFailure(toolName string, timeoutMS int) ToolResult {
-	result := ToolFailureResult(FailureExternalService, FailureCodes.Timeout, strings.TrimSpace(toolName),
-		"the tool did not finish within its "+strconv.Itoa(timeoutMS)+"ms budget")
-	result.Failure.Retryable = true
+func toolBudgetExpiredFailure(toolDefinition ToolDefinition, timeoutMS int) ToolResult {
+	isReadOnly := isReadOnlySideEffectClass(ToolDefinitionSideEffectClass(toolDefinition))
+	summary := "the tool did not finish within " + secondsPhrase(timeoutMS)
+	if !isReadOnly {
+		summary += ", and the work it started may still have taken effect"
+	}
+	result := ToolFailureResult(FailureExternalService, FailureCodes.Timeout, strings.TrimSpace(toolDefinition.Name), summary)
+	if isReadOnly {
+		return result
+	}
+	result.Failure.Retryable = false
+	result.Failure.RetryPolicy = RetryPolicyDoNotRetry
 	return result
+}
+
+func secondsPhrase(milliseconds int) string {
+	seconds := strconv.FormatFloat(float64(milliseconds)/1000, 'f', -1, 64)
+	if seconds == "1" {
+		return "1 second"
+	}
+	return seconds + " seconds"
 }
 
 func toolResultContractFailure(summary string) ToolResult {
