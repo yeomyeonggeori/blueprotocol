@@ -165,3 +165,35 @@ func TestTheCallersOwnCancellationIsNotReportedAsABudgetOverrun(t *testing.T) {
 		t.Fatal("the caller walking away is not the tool being slow, and telling the agent otherwise sends it to retry a task nobody is waiting for")
 	}
 }
+
+func TestAToolThatIgnoresItsDeadlineAndSucceedsKeepsItsSuccess(t *testing.T) {
+	toolSet := toolSetWithBudgetAndSideEffect(20, ToolSideEffectExternalSend, func(_ context.Context, _ ToolInvocation) (ToolResult, error) {
+		time.Sleep(60 * time.Millisecond)
+		return ToolResult{Output: ToolOutput{Content: "sent", Data: []byte(`{}`)}}, nil
+	})
+
+	result, errorValue := toolSet.Invoke(context.Background(), ToolInvocation{ToolName: "slow_tool"})
+
+	if errorValue != nil || result.Failed() {
+		t.Fatalf("the message went out, and calling it unfinished invites sending it twice, got %+v, %v", result.Failure, errorValue)
+	}
+	if result.Output.Content != "sent" {
+		t.Fatalf("a finished call's result must stand as the handler produced it, got %q", result.Output.Content)
+	}
+}
+
+func TestAToolThatGivesUpAtItsDeadlineGetsTheExpiryFailure(t *testing.T) {
+	toolSet := toolSetWithBudgetAndSideEffect(20, ToolSideEffectExternalSend, func(ctx context.Context, _ ToolInvocation) (ToolResult, error) {
+		time.Sleep(60 * time.Millisecond)
+		return ToolResult{}, ctx.Err()
+	})
+
+	result, errorValue := toolSet.Invoke(context.Background(), ToolInvocation{ToolName: "slow_tool"})
+
+	if errorValue != nil {
+		t.Fatalf("an expired budget is a tool result, not an invocation error, got %v", errorValue)
+	}
+	if !result.Failed() || result.Failure.Code != FailureCodes.Timeout.String() {
+		t.Fatalf("a call that ended unfinished after its budget ran out must say it ran out of time, got %+v", result.Failure)
+	}
+}

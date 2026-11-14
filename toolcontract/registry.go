@@ -796,6 +796,9 @@ func (toolSet *ToolSet) invokeWithinDeclaredBudget(ctx context.Context, boundToo
 	budgetContext, releaseBudget := context.WithTimeout(ctx, time.Duration(timeoutMS)*time.Millisecond)
 	defer releaseBudget()
 	result, errorValue := callToolHandler(budgetContext, boundTool, toolInvocation)
+	if errorValue == nil && !result.Failed() {
+		return result, nil
+	}
 	if budgetDeadlineWon(ctx, budgetContext) {
 		return toolBudgetExpiredFailure(boundTool.Definition, timeoutMS), nil
 	}
