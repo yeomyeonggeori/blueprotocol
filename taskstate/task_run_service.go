@@ -242,6 +242,14 @@ func (taskRunService *TaskRunService) ListTaskEvent(taskRunID string) []agentcon
 }
 
 func (taskRunService *TaskRunService) AdvanceTaskRun(taskRunID string, currentAgentProfileName string) (agentcontract.TaskRun, error) {
+	return taskRunService.advanceTaskRunFrom(taskRunID, currentAgentProfileName, advanceTaskRunFromStates())
+}
+
+func (taskRunService *TaskRunService) AdvanceAnsweredTaskRun(taskRunID string, currentAgentProfileName string) (agentcontract.TaskRun, error) {
+	return taskRunService.advanceTaskRunFrom(taskRunID, currentAgentProfileName, answeredTaskRunFromStates())
+}
+
+func (taskRunService *TaskRunService) advanceTaskRunFrom(taskRunID string, currentAgentProfileName string, fromStates []agentcontract.TaskStatus) (agentcontract.TaskRun, error) {
 	now := time.Now()
 	taskAttempt := agentcontract.TaskAttempt{
 		TaskAttemptID: NewIdentifier(),
@@ -252,7 +260,7 @@ func (taskRunService *TaskRunService) AdvanceTaskRun(taskRunID string, currentAg
 	}
 	return taskRunService.TransitionTaskRun(agentcontract.TaskRunTransition{
 		TaskRunID:               taskRunID,
-		FromStates:              advanceTaskRunFromStates(),
+		FromStates:              fromStates,
 		ToState:                 agentcontract.TaskStatusRunning,
 		CurrentAgentProfileName: currentAgentProfileName,
 		StartedAttempt:          &taskAttempt,
@@ -456,6 +464,14 @@ func advanceTaskRunFromStates() []agentcontract.TaskStatus {
 		agentcontract.TaskStatusWaitingUserInput,
 		agentcontract.TaskStatusWaitingApproval,
 		agentcontract.TaskStatusBlocked,
+		agentcontract.TaskStatusInterrupted,
+	}
+}
+
+func answeredTaskRunFromStates() []agentcontract.TaskStatus {
+	return []agentcontract.TaskStatus{
+		agentcontract.TaskStatusWaitingApproval,
+		agentcontract.TaskStatusWaitingUserInput,
 		agentcontract.TaskStatusInterrupted,
 	}
 }

@@ -1215,3 +1215,23 @@ func TestATaskRunCanBeCreatedUnderAnIdentifierTheHostChose(t *testing.T) {
 		t.Fatalf("the run has to live under the host's identifier, got %+v found=%v", taskRun, isFound)
 	}
 }
+
+func TestOnlyOneReaderOfAnAnswerResumesTheRunThatWaitedForIt(t *testing.T) {
+	taskRunService := NewTaskRunService(NewTaskEventService())
+	taskRun := taskRunService.CreateTaskRun("person-1", "direct-1", "post to QA")
+	if _, errorValue := taskRunService.AdvanceTaskRun(taskRun.TaskRunID, "assistant"); errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	if _, errorValue := taskRunService.PauseTaskRun(taskRun.TaskRunID, agentcontract.TaskStatusWaitingApproval, "post it?"); errorValue != nil {
+		t.Fatal(errorValue)
+	}
+
+	if _, errorValue := taskRunService.AdvanceAnsweredTaskRun(taskRun.TaskRunID, "assistant"); errorValue != nil {
+		t.Fatalf("the first reader of the answer takes the run back: %v", errorValue)
+	}
+	_, errorValue := taskRunService.AdvanceAnsweredTaskRun(taskRun.TaskRunID, "assistant")
+	var illegalTransition ErrIllegalTransition
+	if !errors.As(errorValue, &illegalTransition) {
+		t.Fatalf("a second reader of the same answer must find the run already taken, got %v", errorValue)
+	}
+}
