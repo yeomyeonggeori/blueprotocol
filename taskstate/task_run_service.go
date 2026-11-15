@@ -739,21 +739,20 @@ func taskRunIsRuntimeOwned(taskRun agentcontract.TaskRun) bool {
 	return taskRun.Status == agentcontract.TaskStatusPlanned || taskRun.Status == agentcontract.TaskStatusRunning
 }
 
-const staleBlockedTaskRunAge = 24 * time.Hour
-const staleWaitingTaskRunAge = 72 * time.Hour
+const staleUnattendedTaskRunAge = 24 * time.Hour
 
 func StaleUnattendedTaskRunReason(taskRun agentcontract.TaskRun, now time.Time) string {
 	switch taskRun.Status {
 	case agentcontract.TaskStatusBlocked:
-		if now.Sub(taskRun.UpdatedAt) > staleBlockedTaskRunAge {
+		if now.Sub(taskRun.UpdatedAt) > staleUnattendedTaskRunAge {
 			return "blocked_expired"
 		}
 	case agentcontract.TaskStatusWaitingApproval, agentcontract.TaskStatusWaitingUserInput:
-		if now.Sub(taskRun.UpdatedAt) > staleWaitingTaskRunAge {
+		if now.Sub(taskRun.UpdatedAt) > staleUnattendedTaskRunAge {
 			return "waiting_expired"
 		}
 	case agentcontract.TaskStatusInterrupted:
-		if !agentcontract.TaskRunWasInterruptedByRuntimeRestart(taskRun) && now.Sub(taskRun.UpdatedAt) > staleBlockedTaskRunAge {
+		if !agentcontract.TaskRunWasInterruptedByRuntimeRestart(taskRun) && now.Sub(taskRun.UpdatedAt) > staleUnattendedTaskRunAge {
 			return "interrupted_expired"
 		}
 	}

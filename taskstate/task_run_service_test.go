@@ -1141,9 +1141,10 @@ func TestStaleUnattendedTaskRunReasonByStatusAndAge(t *testing.T) {
 	}{
 		{agentcontract.TaskStatusBlocked, 25 * time.Hour, "blocked_expired"},
 		{agentcontract.TaskStatusBlocked, time.Hour, ""},
-		{agentcontract.TaskStatusWaitingApproval, 73 * time.Hour, "waiting_expired"},
-		{agentcontract.TaskStatusWaitingApproval, 25 * time.Hour, ""},
-		{agentcontract.TaskStatusWaitingUserInput, 73 * time.Hour, "waiting_expired"},
+		{agentcontract.TaskStatusWaitingApproval, 25 * time.Hour, "waiting_expired"},
+		{agentcontract.TaskStatusWaitingApproval, 23 * time.Hour, ""},
+		{agentcontract.TaskStatusWaitingUserInput, 25 * time.Hour, "waiting_expired"},
+		{agentcontract.TaskStatusWaitingUserInput, 23 * time.Hour, ""},
 		{agentcontract.TaskStatusRunning, 100 * time.Hour, ""},
 		{agentcontract.TaskStatusFailed, 100 * time.Hour, ""},
 	}
@@ -1180,7 +1181,7 @@ func TestAnInterruptNobodyResumesEventuallyExpires(t *testing.T) {
 		TaskRunID:     "task-1",
 		Status:        agentcontract.TaskStatusInterrupted,
 		FailureReason: "runtime no longer owns this execution",
-		UpdatedAt:     now.Add(-staleBlockedTaskRunAge - time.Hour),
+		UpdatedAt:     now.Add(-staleUnattendedTaskRunAge - time.Hour),
 	}
 
 	if StaleUnattendedTaskRunReason(abandoned, now) == "" {
@@ -1194,7 +1195,7 @@ func TestAnInterruptWaitingToResumeIsLeftAlone(t *testing.T) {
 		TaskRunID:     "task-1",
 		Status:        agentcontract.TaskStatusInterrupted,
 		FailureReason: agentcontract.TaskInterruptReasonRuntimeRestart,
-		UpdatedAt:     now.Add(-staleBlockedTaskRunAge - time.Hour),
+		UpdatedAt:     now.Add(-staleUnattendedTaskRunAge - time.Hour),
 	}
 
 	if StaleUnattendedTaskRunReason(resumable, now) != "" {
