@@ -10,6 +10,7 @@ import (
 // The harness records what a task did; the host decides where that record lives.
 
 type TaskRunStore interface {
+	AdvanceAnsweredTaskRun(taskRunID string, currentAgentProfileName string) (agentcontract.TaskRun, error)
 	AdvanceTaskRun(taskRunID string, currentAgentProfileName string) (agentcontract.TaskRun, error)
 	AppendLLMCall(taskRunID string, record agentcontract.LLMCallRecord)
 	AppendPartedTaskEvent(taskRunID string, name string, document json.RawMessage)
