@@ -138,15 +138,18 @@ func (decisionModel decisionModel) postOnce(ctx context.Context, requestDocument
 	httpRequest.Header.Set("Authorization", "Bearer "+decisionModel.endpoint.APIKey)
 	httpResponse, errorValue := decisionModel.httpClient().Do(httpRequest)
 	if errorValue != nil {
-		return nil, transientretry.TransportOutcome(ctx), errorValue
+		return nil, transientretry.TransportOutcome(ctx), model.UnreachedEndpointError(ctx, errorValue)
 	}
 	defer httpResponse.Body.Close()
 	body, errorValue := io.ReadAll(httpResponse.Body)
 	if errorValue != nil {
-		return nil, transientretry.TransportOutcome(ctx), errorValue
+		return nil, transientretry.TransportOutcome(ctx), model.UnreachedEndpointError(ctx, errorValue)
 	}
 	if httpResponse.StatusCode != http.StatusOK {
-		return nil, transientretry.StatusOutcome(httpResponse), errors.New("decisions endpoint answered " + httpResponse.Status + ": " + strings.TrimSpace(string(body)))
+		return nil, transientretry.StatusOutcome(httpResponse), model.EndpointError{
+			StatusCode: httpResponse.StatusCode,
+			Reason:     errors.New("decisions endpoint answered " + httpResponse.Status + ": " + strings.TrimSpace(string(body))),
+		}
 	}
 	model.RecordWireExchange(ctx, model.WireExchange{Endpoint: httpRequest.URL.String(), Request: string(requestDocument), Response: string(body)})
 	return body, transientretry.Outcome{}, nil

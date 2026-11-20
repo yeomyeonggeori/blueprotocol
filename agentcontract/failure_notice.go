@@ -39,6 +39,7 @@ type FailureReport struct {
 	CarriedFilenames    []string            `json:"carriedFilenames,omitempty"`
 	DiagnosticEventID   string              `json:"diagnosticEventID,omitempty"`
 	IntakeFacts         *IntakeFailureFacts `json:"intakeFacts,omitempty"`
+	Cause               FailureCause        `json:"cause,omitempty"`
 }
 
 type RequestedChange struct {
@@ -389,6 +390,7 @@ func BuildRawErrorFailureNotice(report FailureReport) FailureNotice {
 		Language:          strings.TrimSpace(report.ResponseLanguage),
 		DiagnosticEventID: strings.TrimSpace(report.DiagnosticEventID),
 		IsSendable:        strings.TrimSpace(message) != "",
+		Cause:             report.Cause,
 	}
 }
 

@@ -2,6 +2,7 @@ package decisions
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -40,6 +41,33 @@ func countingServer(statusCode int, counter *atomic.Int32) *httptest.Server {
 		writer.WriteHeader(statusCode)
 		writer.Write([]byte(`{"answers":{},"usage":{}}`))
 	}))
+}
+
+func TestARejectedDecisionNamesTheStatusTheEndpointAnswered(t *testing.T) {
+	var served atomic.Int32
+	server := countingServer(http.StatusPaymentRequired, &served)
+	defer server.Close()
+
+	_, errorValue := retryingDecisionModel(server.URL, server.Client(), time.Millisecond).Decide(context.Background(), model.DecisionRequest{})
+
+	var endpointError model.EndpointError
+	if !errors.As(errorValue, &endpointError) || endpointError.StatusCode != http.StatusPaymentRequired {
+		t.Fatalf("expected the endpoint's 402 to travel with the error, got %#v", errorValue)
+	}
+}
+
+func TestAnUnreachableDecisionEndpointIsMarkedUnreached(t *testing.T) {
+	var served atomic.Int32
+	server := countingServer(http.StatusOK, &served)
+	defer server.Close()
+	transport := &failingTransport{failures: transientretry.Retries + 1, next: http.DefaultTransport}
+
+	_, errorValue := retryingDecisionModel(server.URL, &http.Client{Transport: transport}, time.Millisecond).Decide(context.Background(), model.DecisionRequest{})
+
+	var endpointError model.EndpointError
+	if !errors.As(errorValue, &endpointError) || endpointError.WasReached() {
+		t.Fatalf("expected an unreached endpoint error, got %#v", errorValue)
+	}
 }
 
 func TestADecisionRetriesATransportFailureAndSucceeds(t *testing.T) {
