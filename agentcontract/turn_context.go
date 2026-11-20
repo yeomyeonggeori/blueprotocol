@@ -68,11 +68,12 @@ type ToolExposureEvent struct {
 }
 
 type FailureNotice struct {
-	Message           string `json:"message,omitempty"`
-	Source            string `json:"source,omitempty"`
-	Language          string `json:"language,omitempty"`
-	DiagnosticEventID string `json:"diagnosticEventID,omitempty"`
-	IsSendable        bool   `json:"isSendable,omitempty"`
+	Message           string       `json:"message,omitempty"`
+	Source            string       `json:"source,omitempty"`
+	Language          string       `json:"language,omitempty"`
+	DiagnosticEventID string       `json:"diagnosticEventID,omitempty"`
+	IsSendable        bool         `json:"isSendable,omitempty"`
+	Cause             FailureCause `json:"cause,omitempty"`
 }
 
 func (notice FailureNotice) SendableMessage() string {

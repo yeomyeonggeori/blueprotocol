@@ -2,6 +2,7 @@ package openaicompatible
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -52,6 +53,20 @@ func TestARequestTheEndpointRejectedIsNotRetried(t *testing.T) {
 
 	if errorValue == nil || requestCount != 1 {
 		t.Fatalf("a 400 names a defect in the request itself, and resending it %d times cannot fix it: %v", requestCount, errorValue)
+	}
+}
+
+func TestARejectedCompletionNamesTheStatusTheEndpointAnswered(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusUnauthorized)
+	}))
+	defer server.Close()
+
+	_, errorValue := retryTestProvider(server.URL).post(context.Background(), []byte(`{}`))
+
+	var endpointError model.EndpointError
+	if !errors.As(errorValue, &endpointError) || endpointError.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected the endpoint's 401 to travel with the error, got %#v", errorValue)
 	}
 }
 

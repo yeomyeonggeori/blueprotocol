@@ -274,16 +274,19 @@ func (provider *Provider) postOnce(ctx context.Context, body []byte) ([]byte, tr
 
 	httpResponse, errorValue := provider.httpClient.Do(httpRequest)
 	if errorValue != nil {
-		return nil, transientretry.TransportOutcome(ctx), errorValue
+		return nil, transientretry.TransportOutcome(ctx), model.UnreachedEndpointError(ctx, errorValue)
 	}
 	defer httpResponse.Body.Close()
 
 	responseBody, errorValue := io.ReadAll(httpResponse.Body)
 	if errorValue != nil {
-		return nil, transientretry.TransportOutcome(ctx), errorValue
+		return nil, transientretry.TransportOutcome(ctx), model.UnreachedEndpointError(ctx, errorValue)
 	}
 	if httpResponse.StatusCode != http.StatusOK {
-		return nil, transientretry.StatusOutcome(httpResponse), fmt.Errorf("model endpoint returned %d: %s", httpResponse.StatusCode, truncated(string(responseBody)))
+		return nil, transientretry.StatusOutcome(httpResponse), model.EndpointError{
+			StatusCode: httpResponse.StatusCode,
+			Reason:     fmt.Errorf("model endpoint returned %d: %s", httpResponse.StatusCode, truncated(string(responseBody))),
+		}
 	}
 	model.RecordWireExchange(ctx, model.WireExchange{Endpoint: httpRequest.URL.String(), Request: string(body), Response: string(responseBody)})
 	return responseBody, transientretry.Outcome{}, nil
